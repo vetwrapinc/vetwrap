@@ -52,7 +52,7 @@ export default function Contact() {
       const { mountRecaptcha } = await import('../utils/recaptcha')
       if (!canceled) {
         try {
-          const id = await mountRecaptcha('recaptcha-container', siteKey)
+          const id = await mountRecaptcha('recaptcha-container', siteKey, { theme: 'dark' })
           widgetIdRef.current = id
         } catch {}
       }

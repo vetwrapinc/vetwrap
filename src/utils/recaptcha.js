@@ -12,9 +12,13 @@ export function loadRecaptcha(siteKey) {
   })
 }
 
-export async function mountRecaptcha(containerId, siteKey) {
+export async function mountRecaptcha(containerId, siteKey, options = {}) {
   const grecaptcha = await loadRecaptcha(siteKey)
   if (!grecaptcha) return null
-  return grecaptcha.render(containerId, { sitekey: siteKey })
+  const opts = {
+    sitekey: siteKey,
+    theme: options.theme || 'dark',
+    size: options.size || 'normal'
+  }
+  return grecaptcha.render(containerId, opts)
 }
-
