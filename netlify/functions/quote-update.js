@@ -2,18 +2,17 @@
 // Env:
 // - ADMIN_EMAILS, SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_TABLE
 
+const { verifyAdminToken, json } = require('./_auth')
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST' && event.httpMethod !== 'PATCH') {
     return json(405, { error: 'Method Not Allowed' })
   }
-  const auth = event.headers['authorization'] || ''
-  if (!auth.startsWith('Bearer ')) return json(401, { error: 'Unauthorized' })
-  const user = await getIdentityUser(auth, event).catch(() => null)
-  if (!user) return json(401, { error: 'Unauthorized' })
-
-  const admins = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)
-  const email = (user.email || '').toLowerCase()
-  if (!admins.includes(email)) return json(403, { error: 'Forbidden' })
+  try {
+    verifyAdminToken(event)
+  } catch (e) {
+    return json(401, { error: e.message || 'Unauthorized' })
+  }
 
   let body
   try {
@@ -33,7 +32,7 @@ exports.handler = async (event) => {
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE
   const table = process.env.SUPABASE_TABLE || 'quotes'
-  if (!url || !key) return json(500, { error: 'Supabase not configured' })
+  if (!url || !key) return json(200, { ok: false, skipped: 'Supabase not configured' })
 
   const res = await fetch(`${url}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
     method: 'PATCH',
@@ -52,18 +51,3 @@ exports.handler = async (event) => {
   const data = await res.json()
   return json(200, { ok: true, item: data?.[0] })
 }
-
-function json(statusCode, data) {
-  return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }
-}
-
-async function getIdentityUser(authHeader, event) {
-  const host = event.headers['x-forwarded-host'] || event.headers.host
-  const proto = event.headers['x-forwarded-proto'] || 'https'
-  if (!host) return null
-  const url = `${proto}://${host}/.netlify/identity/user`
-  const res = await fetch(url, { headers: { Authorization: authHeader } })
-  if (!res.ok) return null
-  return res.json()
-}
-

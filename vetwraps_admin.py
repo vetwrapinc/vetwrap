@@ -153,6 +153,9 @@ class ApiClient:
         headers = {}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
+        admin_token = os.environ.get('VETWRAPS_ADMIN_TOKEN')
+        if admin_token:
+            headers['x-admin-token'] = admin_token
         r = requests.get(url, headers=headers, timeout=30)
         if r.status_code != 200:
             raise RuntimeError(f"Fetch failed ({r.status_code}): {r.text[:180]}")
@@ -181,6 +184,9 @@ class ApiClient:
         headers = {"Content-Type": "application/json"}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
+        admin_token = os.environ.get('VETWRAPS_ADMIN_TOKEN')
+        if admin_token:
+            headers['x-admin-token'] = admin_token
         payload: Dict[str, Any] = {"id": order_id}
         if status is not None:
             payload["status"] = status
@@ -213,7 +219,7 @@ class LoginPage(QtWidgets.QWidget):
         layout.setSpacing(18)
 
         # Header
-        header = QtWidgets.QLabel("VetWraps Admin — Sign In")
+        header = QtWidgets.QLabel("VetWraps Admin - Access")
         header.setObjectName("Header")
         header.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         layout.addWidget(header)
@@ -231,10 +237,13 @@ class LoginPage(QtWidgets.QWidget):
         self.password = QtWidgets.QLineEdit()
         self.password.setPlaceholderText("password")
         self.password.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.token = QtWidgets.QLineEdit()
+        self.token.setPlaceholderText("admin token (x-admin-token)")
 
         form.addRow("Base URL", self.base_url)
         form.addRow("Email", self.email)
         form.addRow("Password", self.password)
+        form.addRow("Admin Token", self.token)
 
         container = QtWidgets.QFrame()
         container.setObjectName("GlassFrame")
@@ -247,7 +256,7 @@ class LoginPage(QtWidgets.QWidget):
         layout.addWidget(self.status)
 
         btns = QtWidgets.QHBoxLayout()
-        self.login_btn = QtWidgets.QPushButton("Sign In")
+        self.login_btn = QtWidgets.QPushButton("Continue")
         self.login_btn.clicked.connect(self._on_login)
         self.save_btn = QtWidgets.QPushButton("Save Config")
         self.save_btn.clicked.connect(self._save_config)
@@ -260,21 +269,20 @@ class LoginPage(QtWidgets.QWidget):
 
     def _on_login(self):
         base = self.base_url.text().strip()
-        email = self.email.text().strip()
-        password = self.password.text()
-        if not base or not email or not password:
-            self.status.setText("Please fill all fields.")
+        admin_token = self.token.text().strip()
+        if not base or not admin_token:
+            self.status.setText("Base URL and Admin Token required.")
             return
-        self.status.setText("Signing in…")
+        self.status.setText("Preparing dashboard...")
         self.login_btn.setEnabled(False)
 
         def worker():
             try:
                 self.api = ApiClient(base)
-                token = self.api.identity_login(email, password)
                 self._save_config()  # store base/email
-                self.logged_in.emit(base, token)
-                self.status.setText("Signed in.")
+                os.environ['VETWRAPS_ADMIN_TOKEN'] = admin_token
+                self.logged_in.emit(base, '')
+                self.status.setText("Ready.")
             except Exception as e:
                 self.status.setText(f"Login failed: {e}")
             finally:
@@ -474,6 +482,20 @@ class DashboardPage(QtWidgets.QWidget):
             self.table.setItem(row, 9, left_item)
             self.table.setItem(row, 10, eff_item)
             self.table.setItem(row, 11, notes_item)
+
+            # Due-soon highlight
+            try:
+                days = 5.5 if o.rush else 7.5
+                due = o.created_at + timedelta(days=days)
+                left = (due - datetime.now(timezone.utc)).total_seconds()
+                if left < 48 * 3600:
+                    for col in range(0, 12):
+                        item = self.table.item(row, col)
+                        if item is None:
+                            continue
+                        item.setBackground(QtGui.QBrush(QtGui.QColor(255, 178, 106, 26)))
+            except Exception:
+                pass
 
         if data:
             self.table.selectRow(0)

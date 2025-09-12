@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/generate-sitemap.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "netlify:setup-win": "powershell -ExecutionPolicy Bypass -File scripts/netlify-setup.ps1",
+    "netlify:setup": "bash scripts/netlify-setup.sh",
+    "admin:build-win": "powershell -ExecutionPolicy Bypass -File scripts/build-admin.ps1",
+    "token:build-win": "powershell -ExecutionPolicy Bypass -File scripts/build-token.ps1"
   },
   "dependencies": {
     "@headlessui/react": "^2.1.9",

@@ -8,6 +8,7 @@ export async function authFetch(input, init = {}) {
   }
   const headers = new Headers(init.headers || {})
   if (token) headers.set('Authorization', `Bearer ${token}`)
+  const adminToken = localStorage.getItem('vetwraps_admin_token')
+  if (adminToken) headers.set('x-admin-token', adminToken)
   return fetch(input, { ...init, headers })
 }
-

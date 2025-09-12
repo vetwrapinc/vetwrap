@@ -5,6 +5,7 @@ import { authFetch } from '../utils/api'
 
 export default function Subscribers() {
   const { user, ready, login, logout } = useIdentity()
+  const [adminToken, setAdminToken] = React.useState(() => localStorage.getItem('vetwraps_admin_token') || '')
   const [items, setItems] = React.useState(null)
   const [error, setError] = React.useState(null)
   const [statusFilter, setStatusFilter] = React.useState('all')
@@ -34,11 +35,17 @@ export default function Subscribers() {
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-12">
         {!ready ? (
           <p className="text-white/70">Loading…</p>
-        ) : !user ? (
+        ) : (!user && !adminToken) ? (
           <div className="text-center">
             <h1 className="text-2xl font-semibold tracking-tight">Restricted</h1>
-            <p className="text-white/70 mt-2 text-sm">Sign in with Netlify Identity to continue.</p>
-            <button onClick={login} className="mt-6 px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50">Sign In</button>
+            <p className="text-white/70 mt-2 text-sm">Provide an admin token or sign in.</p>
+            <div className="mt-4 max-w-sm mx-auto">
+              <input value={adminToken} onChange={(e)=>setAdminToken(e.target.value)} placeholder="x-admin-token" className="w-full bg-white/5 border-white/15 rounded-md" />
+              <div className="mt-3 flex items-center justify-center gap-3">
+                <button onClick={()=>{ localStorage.setItem('vetwraps_admin_token', adminToken); load() }} className="px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50">Use Token</button>
+                <button onClick={login} className="px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50">Sign In</button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -88,13 +95,13 @@ export default function Subscribers() {
                       {items
                         .filter(q=> statusFilter==='all' || (q.status||'new')===statusFilter)
                         .map((q) => (
-                        <tr key={q.id} className="border-t border-white/10">
+                        <tr key={q.id} className={`border-t border-white/10 ${isDueSoon(q) ? 'bg-accent-amber/5' : ''}`}>
                           <td className="py-2 pr-4 text-white/70">{formatDate(q.createdAt)}</td>
                           <td className="py-2 pr-4">{q.name}</td>
                           <td className="py-2 pr-4 text-white/80">{q.email}</td>
                           <td className="py-2 pr-4">{q.projectType}</td>
                           <td className="py-2 pr-4">{q.rush ? 'Yes' : 'No'}</td>
-                          <td className="py-2 pr-4">{q.status || 'new'}</td>
+                          <td className="py-2 pr-4">{statusBadge(q.status || 'new')}</td>
                           <td className="py-2 pr-4">{q.assignee || '-'}</td>
                           <td className="py-2 pr-4">
                             <RowActions id={q.id} onDone={load} />
@@ -115,6 +122,23 @@ export default function Subscribers() {
 
 function formatDate(s) {
   try { return new Date(s).toLocaleString() } catch { return s }
+}
+
+function isDueSoon(q) {
+  try {
+    const created = new Date(q.createdAt)
+    const days = q.rush ? 5.5 : 7.5
+    const due = new Date(created.getTime() + days * 24 * 3600 * 1000)
+    const left = +due - Date.now()
+    return left < 48 * 3600 * 1000
+  } catch { return false }
+}
+
+function statusBadge(s) {
+  const base = 'px-2 py-0.5 rounded text-xs border'
+  if (s === 'processed') return <span className={`${base} border-white/10 bg-white/10 text-white/80`}>Processed</span>
+  if (s === 'in_progress') return <span className={`${base} border-accent-blue/30 bg-accent-blue/10 text-accent-blue`}>In Progress</span>
+  return <span className={`${base} border-white/10 bg-white/5 text-white/80`}>New</span>
 }
 
 function RowActions({ id, onDone }) {
