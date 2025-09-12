@@ -23,3 +23,9 @@ alter table public.quotes enable row level security;
 -- Helpful index for time sorting
 create index if not exists quotes_created_idx on public.quotes ("createdAt" desc);
 
+-- Enhancements for admin workflow
+alter table public.quotes add column if not exists status text default 'new'; -- new | in_progress | processed
+alter table public.quotes add column if not exists "processedAt" timestamptz;
+alter table public.quotes add column if not exists assignee text;
+create index if not exists quotes_status_idx on public.quotes (status);
+

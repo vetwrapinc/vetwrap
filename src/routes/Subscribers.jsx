@@ -7,6 +7,7 @@ export default function Subscribers() {
   const { user, ready, login, logout } = useIdentity()
   const [items, setItems] = React.useState(null)
   const [error, setError] = React.useState(null)
+  const [statusFilter, setStatusFilter] = React.useState('all')
 
   async function load() {
     setError(null)
@@ -49,7 +50,15 @@ export default function Subscribers() {
             <div className="mt-6 rounded-xl glass border border-glass p-6">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold">Recent Quotes</h2>
-                <button onClick={load} className="text-sm text-white/80 hover:text-white">Refresh</button>
+                <div className="flex items-center gap-3">
+                  <select value={statusFilter} onChange={(e)=>setStatusFilter(e.target.value)} className="bg-white/5 border-white/15 rounded text-sm">
+                    <option value="all">All</option>
+                    <option value="new">New</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="processed">Processed</option>
+                  </select>
+                  <button onClick={load} className="text-sm text-white/80 hover:text-white">Refresh</button>
+                </div>
               </div>
               {!items && !error && (
                 <p className="mt-4 text-sm text-white/70">Loading…</p>
@@ -70,16 +79,26 @@ export default function Subscribers() {
                         <th className="text-left py-2 pr-4">Email</th>
                         <th className="text-left py-2 pr-4">Project</th>
                         <th className="text-left py-2 pr-4">Rush</th>
+                        <th className="text-left py-2 pr-4">Status</th>
+                        <th className="text-left py-2 pr-4">Assignee</th>
+                        <th className="text-left py-2 pr-4">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((q) => (
+                      {items
+                        .filter(q=> statusFilter==='all' || (q.status||'new')===statusFilter)
+                        .map((q) => (
                         <tr key={q.id} className="border-t border-white/10">
                           <td className="py-2 pr-4 text-white/70">{formatDate(q.createdAt)}</td>
                           <td className="py-2 pr-4">{q.name}</td>
                           <td className="py-2 pr-4 text-white/80">{q.email}</td>
                           <td className="py-2 pr-4">{q.projectType}</td>
                           <td className="py-2 pr-4">{q.rush ? 'Yes' : 'No'}</td>
+                          <td className="py-2 pr-4">{q.status || 'new'}</td>
+                          <td className="py-2 pr-4">{q.assignee || '-'}</td>
+                          <td className="py-2 pr-4">
+                            <RowActions id={q.id} onDone={load} />
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -96,4 +115,20 @@ export default function Subscribers() {
 
 function formatDate(s) {
   try { return new Date(s).toLocaleString() } catch { return s }
+}
+
+function RowActions({ id, onDone }) {
+  async function update(payload) {
+    await authFetch('/api/quote-update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload })
+    })
+    await onDone()
+  }
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <button onClick={()=>update({ status: 'in_progress' })} className="px-2 py-1 rounded bg-white/10 border border-white/10 hover:border-accent-blue/50">In Progress</button>
+      <button onClick={()=>update({ status: 'processed', processedAt: true })} className="px-2 py-1 rounded bg-white/10 border border-white/10 hover:border-accent-amber/50">Processed</button>
+    </div>
+  )
 }
