@@ -9,6 +9,11 @@ const cases = [
 export default function CaseStudies() {
   return (
     <div className="min-h-screen bg-night text-white">
+      <Helmet>
+        <title>Case Studies — VetWraps</title>
+        <meta name="description" content="Deep dives into our disciplined, high-impact design process." />
+        <link rel="canonical" href="https://vetwraps.com/case-studies" />
+      </Helmet>
       <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
         <h1 className="text-3xl font-semibold tracking-tight">Case Studies</h1>
         <p className="text-white/70 mt-2">Deep dives into process and execution. Coming soon.</p>
@@ -24,4 +29,3 @@ export default function CaseStudies() {
     </div>
   )
 }
-

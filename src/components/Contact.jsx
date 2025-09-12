@@ -22,6 +22,12 @@ export default function Contact() {
 
     // placeholder POST to future backend endpoint
     try {
+      // Collect reCAPTCHA token if widget mounted
+      if (widgetIdRef.current && window.grecaptcha) {
+        const token = window.grecaptcha.getResponse(widgetIdRef.current)
+        if (token) form.set('recaptcha', token)
+      }
+
       const res = await fetch('/api/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

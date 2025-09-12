@@ -1,4 +1,5 @@
 import React from 'react'
+import { Helmet } from 'react-helmet-async'
 
 const posts = [
   { title: 'Studio Update', date: '2025-01-02', summary: 'Operational improvements and new retainers.' },
@@ -8,6 +9,11 @@ const posts = [
 export default function WhatsNew() {
   return (
     <div className="min-h-screen bg-night text-white">
+      <Helmet>
+        <title>What’s New — VetWraps</title>
+        <meta name="description" content="Updates, operational improvements, and ways we support veterans overseas." />
+        <link rel="canonical" href="https://vetwraps.com/whats-new" />
+      </Helmet>
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-12">
         <h1 className="text-3xl font-semibold tracking-tight">What’s New?</h1>
         <p className="text-white/70 mt-2">Updates, announcements, and insights.</p>
@@ -24,4 +30,3 @@ export default function WhatsNew() {
     </div>
   )
 }
-
