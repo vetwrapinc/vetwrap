@@ -1,9 +1,29 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useIdentity } from '../utils/identity'
+import { authFetch } from '../utils/api'
 
 export default function Subscribers() {
   const { user, ready, login, logout } = useIdentity()
+  const [items, setItems] = React.useState(null)
+  const [error, setError] = React.useState(null)
+
+  async function load() {
+    setError(null)
+    setItems(null)
+    try {
+      const res = await authFetch('/api/quotes-list')
+      if (!res.ok) throw new Error('Failed to load')
+      const data = await res.json()
+      setItems(data.items || [])
+    } catch (e) {
+      setError(e.message || 'Error')
+    }
+  }
+
+  React.useEffect(() => {
+    if (user) load()
+  }, [user])
   return (
     <div className="min-h-screen bg-night text-white">
       <Helmet>
@@ -27,16 +47,53 @@ export default function Subscribers() {
             </div>
             <p className="text-white/70 mt-2 text-sm">Welcome, {user?.user_metadata?.full_name || user.email}</p>
             <div className="mt-6 rounded-xl glass border border-glass p-6">
-              <p className="text-sm text-white/80">Future features:</p>
-              <ul className="mt-2 text-sm text-white/70 list-disc pl-5">
-                <li>Manage subscription clients</li>
-                <li>Review form submissions</li>
-                <li>Project status tracking</li>
-              </ul>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">Recent Quotes</h2>
+                <button onClick={load} className="text-sm text-white/80 hover:text-white">Refresh</button>
+              </div>
+              {!items && !error && (
+                <p className="mt-4 text-sm text-white/70">Loading…</p>
+              )}
+              {error && (
+                <p className="mt-4 text-sm text-red-400">{error}</p>
+              )}
+              {items && items.length === 0 && (
+                <p className="mt-4 text-sm text-white/70">No quotes yet.</p>
+              )}
+              {items && items.length > 0 && (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-white/70">
+                      <tr>
+                        <th className="text-left py-2 pr-4">Created</th>
+                        <th className="text-left py-2 pr-4">Name</th>
+                        <th className="text-left py-2 pr-4">Email</th>
+                        <th className="text-left py-2 pr-4">Project</th>
+                        <th className="text-left py-2 pr-4">Rush</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((q) => (
+                        <tr key={q.id} className="border-t border-white/10">
+                          <td className="py-2 pr-4 text-white/70">{formatDate(q.createdAt)}</td>
+                          <td className="py-2 pr-4">{q.name}</td>
+                          <td className="py-2 pr-4 text-white/80">{q.email}</td>
+                          <td className="py-2 pr-4">{q.projectType}</td>
+                          <td className="py-2 pr-4">{q.rush ? 'Yes' : 'No'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         )}
       </div>
     </div>
   )
+}
+
+function formatDate(s) {
+  try { return new Date(s).toLocaleString() } catch { return s }
 }

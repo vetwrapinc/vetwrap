@@ -34,11 +34,32 @@ Features
 
 Backend Hookup (later)
 ----------------------
-- Quote form POSTs to `/api/quote` (Netlify function or custom endpoint). Add server-side validation + reCAPTCHA verification.
+- Quote form POSTs to `/api/quote` (Netlify Function). Server validates inputs, verifies reCAPTCHA when configured, optionally emails and persists to DB.
+
+Serverless Functions
+--------------------
+- `netlify/functions/quote.js`: Accepts quote submissions.
+  - Env: `RECAPTCHA_SECRET` (Google), `EMAIL_PROVIDER` (`resend` or `sendgrid`), `RESEND_API_KEY` or `SENDGRID_API_KEY`, `QUOTE_INBOX`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE`, `SUPABASE_TABLE` (default `quotes`), `QUOTE_WEBHOOK_URL` (Slack/Discord).
+- `netlify/functions/quotes-list.js`: Lists recent quotes for admins.
+  - Requires Netlify Identity auth and email in `ADMIN_EMAILS` (comma-separated).
+
+Supabase
+--------
+- Create the `quotes` table using `db/schema.sql`.
+- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE` in Netlify env.
+
+Netlify Identity
+----------------
+- Site settings → Identity → Enable. Invite your admin email(s).
+- Set `ADMIN_EMAILS` env with allowed addresses (comma-separated).
+- `/subscribers` route is gated; it lists quotes via `/api/quotes-list` when authenticated.
+
+Sitemap
+-------
+- `scripts/generate-sitemap.mjs` runs after `vite build`; set `SITE_URL` env for correct canonical host.
 
 Structure
 ---------
 - src/components: UI sections and widgets
 - src/routes: internal pages (/subscribers, case studies, updates)
 - public: og-cover.svg, robots.txt
-
