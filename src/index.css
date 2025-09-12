@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0A0A0F;
+  --fg: #ffffff;
+  --accent-blue: #5FB7FA;
+  --accent-amber: #FFB26A;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: #0A0A0F;
+}
+
+/* Smooth scroll for sections */
+html { scroll-behavior: smooth; }
+
+/* Glassmorphic card helper */
+.glass {
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+}
+
+/* Orbital gradient base */
+.orbital-bg {
+  background-image: radial-gradient(1200px 600px at 10% -10%, rgba(95,183,250,0.18), transparent 60%), radial-gradient(1000px 500px at 110% 10%, rgba(255,178,106,0.14), transparent 60%);
+}
+
+/* Focus ring for accessibility */
+.focusable:focus {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Magnetic button area prevents layout shift */
+.magnetic-area { perspective: 600px; }
+
+/* Tilt helpers */
+.tilt { transform-style: preserve-3d; }
+.tilt > * { transform: translateZ(20px); }
+

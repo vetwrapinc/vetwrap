@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="630" fill="#0A0A0F"/>
+<g opacity="0.35" filter="url(#b)">
+<circle cx="250" cy="-50" r="350" fill="#5FB7FA"/>
+</g>
+<g opacity="0.28" filter="url(#c)">
+<circle cx="1050" cy="80" r="300" fill="#FFB26A"/>
+</g>
+<g opacity="0.4">
+<ellipse cx="600" cy="315" rx="500" ry="190" stroke="#5FB7FA" stroke-dasharray="10 14"/>
+<ellipse cx="600" cy="315" rx="360" ry="140" stroke="#FFB26A" stroke-opacity="0.6"/>
+</g>
+<text x="100" y="340" fill="white" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="800">Mission-Ready Design. Veteran Precision.</text>
+<defs>
+<filter id="b" x="-200" y="-500" width="900" height="900" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feGaussianBlur stdDeviation="80"/>
+</filter>
+<filter id="c" x="600" y="-370" width="900" height="900" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feGaussianBlur stdDeviation="80"/>
+</filter>
+</defs>
+</svg>
+

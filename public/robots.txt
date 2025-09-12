@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Hidden route should not be indexed
+Disallow: /subscribers
+
+Sitemap: https://vetwraps.com/sitemap.xml
+
