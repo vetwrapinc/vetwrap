@@ -9,20 +9,23 @@ import CaseStudies from './routes/CaseStudies'
 import CaseStudy from './routes/CaseStudy'
 import WhatsNew from './routes/WhatsNew'
 import { Analytics } from './utils/analytics'
+import { SessionProvider } from './utils/session'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
-      <BrowserRouter>
-        <Analytics />
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/subscribers" element={<Subscribers />} />
-          <Route path="/case-studies" element={<CaseStudies />} />
-          <Route path="/case-studies/:slug" element={<CaseStudy />} />
-          <Route path="/whats-new" element={<WhatsNew />} />
-        </Routes>
-      </BrowserRouter>
+      <SessionProvider>
+        <BrowserRouter>
+          <Analytics />
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/subscribers" element={<Subscribers />} />
+            <Route path="/case-studies" element={<CaseStudies />} />
+            <Route path="/case-studies/:slug" element={<CaseStudy />} />
+            <Route path="/whats-new" element={<WhatsNew />} />
+          </Routes>
+        </BrowserRouter>
+      </SessionProvider>
     </HelmetProvider>
   </React.StrictMode>
 )
