@@ -41,18 +41,26 @@ Serverless Functions
 - `netlify/functions/quote.js`: Accepts quote submissions.
   - Env: `RECAPTCHA_SECRET` (Google), `EMAIL_PROVIDER` (`resend` or `sendgrid`), `RESEND_API_KEY` or `SENDGRID_API_KEY`, `QUOTE_INBOX`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE`, `SUPABASE_TABLE` (default `quotes`), `QUOTE_WEBHOOK_URL` (Slack/Discord).
 - `netlify/functions/quotes-list.js`: Lists recent quotes for admins.
-  - Requires Netlify Identity auth and email in `ADMIN_EMAILS` (comma-separated).
+  - Requires a portal session token with admin role and email in `ADMIN_EMAILS` (comma-separated).
 
 Supabase
 --------
 - Create the `quotes` table using `db/schema.sql`.
+- The same schema defines `portal_users` (role-aware accounts) and `portal_assignments` (client ↔ employee pairing).
 - Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE` in Netlify env.
 
-Netlify Identity
-----------------
-- Site settings → Identity → Enable. Invite your admin email(s).
-- Set `ADMIN_EMAILS` env with allowed addresses (comma-separated).
-- `/subscribers` route is gated; it lists quotes via `/api/quotes-list` when authenticated.
+Portal Authentication
+---------------------
+- `/subscribers` now hosts the VetWraps Portal for admins, employees, and clients.
+- Set `PORTAL_TOKEN_SECRET` (fallbacks to `ADMIN_TOKEN_SECRET`) to encrypt login tokens.
+- Seed Supabase with at least one admin row in `portal_users` (hash passwords with `node -e "console.log(require('bcryptjs').hashSync('TempPass123', 12))"`).
+- Admin addresses must still be included in `ADMIN_EMAILS` for quote management endpoints.
+- Admins can add users and assign clients to employees directly from the portal UI.
+
+AI Email Generator
+------------------
+- Optional env: `AI_EMAIL_API_KEY` or `OPENAI_API_KEY` (plus `AI_EMAIL_MODEL`).
+- Without a key the server falls back to an on-device templated draft so the tool remains useful offline.
 
 Sitemap
 -------
