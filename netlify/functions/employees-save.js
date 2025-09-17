@@ -1,4 +1,4 @@
-const { verifyAdminToken, json } = require('./_auth')
+const { requireAccess, json } = require('./_auth')
 
 const allowedStatuses = new Set(['active', 'on_leave', 'former'])
 
@@ -26,7 +26,7 @@ exports.handler = async (event) => {
     return json(405, { error: 'Method Not Allowed' })
   }
   try {
-    verifyAdminToken(event)
+    await requireAccess(event, { allow: ['admin'] })
   } catch (e) {
     return json(401, { error: e.message || 'Unauthorized' })
   }

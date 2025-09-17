@@ -3,14 +3,15 @@
 // - ADMIN_EMAILS: comma-separated emails allowed to access
 // - SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_TABLE (default 'quotes')
 
-const { verifyAdminToken, json } = require('./_auth')
+const { requireAccess, json } = require('./_auth')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return json(405, { error: 'Method Not Allowed' })
   }
+  let access
   try {
-    verifyAdminToken(event)
+    access = await requireAccess(event, { allow: ['admin', 'employee', 'client'] })
   } catch (e) {
     return json(401, { error: e.message || 'Unauthorized' })
   }
@@ -20,8 +21,13 @@ exports.handler = async (event) => {
   const table = process.env.SUPABASE_TABLE || 'quotes'
   if (!url || !key) return json(200, { items: [] })
 
-  const search = new URLSearchParams({ select: '*', order: 'createdAt.desc', limit: '50' })
-  const res = await fetch(`${url}/rest/v1/${table}?${search}`, {
+  const search = new URLSearchParams({ select: '*', order: 'createdAt.desc', limit: '200' })
+  if (access.role === 'client') {
+    search.append('email', `eq.${access.email}`)
+    search.set('limit', '50')
+  }
+
+  const res = await fetch(`${url}/rest/v1/${table}?${search.toString()}`, {
     headers: {
       'apikey': key,
       'Authorization': `Bearer ${key}`

@@ -1,13 +1,14 @@
-const { requireAccess, json } = require('./_auth')
+const { requireAccess, json, getSupabaseConfig } = require('./_auth')
 
 exports.handler = async (event) => {
   if (!['POST', 'DELETE'].includes(event.httpMethod)) {
     return json(405, { error: 'Method Not Allowed' })
   }
+
   try {
     await requireAccess(event, { allow: ['admin'] })
-  } catch (e) {
-    return json(401, { error: e.message || 'Unauthorized' })
+  } catch (err) {
+    return json(401, { error: err.message || 'Unauthorized' })
   }
 
   let id
@@ -15,24 +16,26 @@ exports.handler = async (event) => {
     id = event.queryStringParameters?.id
   } else {
     try {
-      const body = JSON.parse(event.body || '{}')
-      id = body.id
+      const payload = JSON.parse(event.body || '{}')
+      id = payload.id
     } catch (err) {
       return json(400, { error: 'Invalid JSON' })
     }
   }
 
+  if (id) id = String(id).trim()
   if (!id) {
     return json(400, { error: 'Missing id' })
   }
 
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  const table = process.env.SUPABASE_EMPLOYEES_TABLE || 'employees'
-  if (!url || !key) {
-    return json(500, { error: 'Supabase not configured' })
+  let config
+  try {
+    config = getSupabaseConfig('SUPABASE_ACCESS_TABLE', 'access_grants')
+  } catch (err) {
+    return json(500, { error: err.message || 'Access store unavailable' })
   }
 
+  const { url, key, table } = config
   const res = await fetch(`${url}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: {

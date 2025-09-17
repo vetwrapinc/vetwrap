@@ -1,11 +1,11 @@
-const { verifyAdminToken, json } = require('./_auth')
+const { requireAccess, json } = require('./_auth')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return json(405, { error: 'Method Not Allowed' })
   }
   try {
-    verifyAdminToken(event)
+    await requireAccess(event, { allow: ['admin', 'employee'] })
   } catch (e) {
     return json(401, { error: e.message || 'Unauthorized' })
   }

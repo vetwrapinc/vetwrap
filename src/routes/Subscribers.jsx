@@ -21,6 +21,17 @@ const quoteStatusOptions = [
   { value: 'processed', label: 'Processed' }
 ]
 
+const accessRoleOptions = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'employee', label: 'Employee' },
+  { value: 'client', label: 'Client' }
+]
+
+const accessStatusOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'suspended', label: 'Suspended' }
+]
+
 const emptyEmployeeForm = {
   id: '',
   firstName: '',
@@ -34,9 +45,24 @@ const emptyEmployeeForm = {
   notes: ''
 }
 
+const emptyAccessForm = {
+  id: '',
+  email: '',
+  name: '',
+  role: 'employee',
+  status: 'active',
+  notes: ''
+}
+
 export default function Subscribers() {
-  const { user, ready, login, logout } = useIdentity()
-  const initialToken = React.useMemo(() => localStorage.getItem('vetwraps_admin_token') || '', [])
+  const { user, ready, login, logout, access, refreshAccess } = useIdentity()
+  const initialToken = React.useMemo(() => {
+    try {
+      return localStorage.getItem('vetwraps_admin_token') || ''
+    } catch {
+      return ''
+    }
+  }, [])
   const [storedAdminToken, setStoredAdminToken] = React.useState(initialToken)
   const [adminTokenInput, setAdminTokenInput] = React.useState(initialToken)
 
@@ -57,8 +83,36 @@ export default function Subscribers() {
   const [searchTerm, setSearchTerm] = React.useState('')
   const [loadingQuotes, setLoadingQuotes] = React.useState(false)
 
-  const hasAccess = !!user || !!storedAdminToken
-  const welcomeName = user?.user_metadata?.full_name || user?.email || (storedAdminToken ? 'Admin' : '')
+  const [accessGrants, setAccessGrants] = React.useState([])
+  const [loadingAccessGrants, setLoadingAccessGrants] = React.useState(false)
+  const [accessMessage, setAccessMessage] = React.useState(null)
+  const [accessForm, setAccessForm] = React.useState(emptyAccessForm)
+  const [savingAccess, setSavingAccess] = React.useState(false)
+  const [deletingAccessId, setDeletingAccessId] = React.useState(null)
+  const [updatingAccessId, setUpdatingAccessId] = React.useState(null)
+  const [accessStatusFilter, setAccessStatusFilter] = React.useState('all')
+  const [accessRoleFilter, setAccessRoleFilter] = React.useState('all')
+  const [accessSearch, setAccessSearch] = React.useState('')
+
+  const accessChecked = storedAdminToken ? true : access.checked
+  const hasIdentityAccess = ready && accessChecked && access.allowed
+  const hasAccess = Boolean(storedAdminToken || hasIdentityAccess)
+  const role = storedAdminToken ? 'admin' : access.grant?.role || null
+  const welcomeName =
+    access.grant?.name ||
+    user?.user_metadata?.full_name ||
+    user?.full_name ||
+    user?.email ||
+    (storedAdminToken ? 'Admin' : '')
+  const canViewEmployees = Boolean(storedAdminToken || role === 'admin' || role === 'employee')
+  const canManageEmployees = Boolean(storedAdminToken || role === 'admin')
+  const canViewClients = Boolean(storedAdminToken || role === 'admin' || role === 'employee' || role === 'client')
+  const canManageQuotes = Boolean(storedAdminToken || role === 'admin' || role === 'employee')
+  const canManageAccess = Boolean(storedAdminToken || role === 'admin')
+  const accessReason = access.reason || ''
+  const identityChecking = Boolean(!storedAdminToken && user && ready && (!access.checked || access.loading))
+  const employeeFormDisabled = !canManageEmployees
+  const quotesReadOnly = !canManageQuotes
 
   const loadEmployees = React.useCallback(async () => {
     setEmployeeError(null)
@@ -110,16 +164,64 @@ export default function Subscribers() {
     }
   }, [])
 
+  const loadAccessGrants = React.useCallback(async () => {
+    if (!canManageAccess) return
+    setLoadingAccessGrants(true)
+    try {
+      const res = await authFetch('/api/access-grants-list')
+      let data = {}
+      try {
+        data = await res.json()
+      } catch {
+        data = {}
+      }
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load access list')
+      }
+      const items = Array.isArray(data.items) ? data.items.map(mapAccessGrant) : []
+      setAccessGrants(items)
+    } catch (err) {
+      setAccessGrants([])
+      setAccessMessage({ type: 'error', text: err.message || 'Failed to load access list' })
+    } finally {
+      setLoadingAccessGrants(false)
+    }
+  }, [canManageAccess])
+
   React.useEffect(() => {
     if (!ready) return
-    if (hasAccess) {
-      loadEmployees()
-      loadQuotes()
-    } else {
+    if (!storedAdminToken && !accessChecked) return
+    if (!hasAccess) {
       setEmployees([])
       setQuotes([])
+      if (!storedAdminToken) setAccessGrants([])
+      return
     }
-  }, [ready, hasAccess, loadEmployees, loadQuotes])
+    if (canViewEmployees) {
+      loadEmployees()
+    } else {
+      setEmployees([])
+    }
+    if (canViewClients) {
+      loadQuotes()
+    } else {
+      setQuotes([])
+    }
+    if (canManageAccess) {
+      loadAccessGrants()
+    }
+  }, [
+    ready,
+    storedAdminToken,
+    accessChecked,
+    hasAccess,
+    canViewEmployees,
+    canViewClients,
+    canManageAccess,
+    loadEmployees,
+    loadQuotes,
+    loadAccessGrants
+  ])
   function handleUseToken() {
     const trimmed = adminTokenInput.trim()
     if (!trimmed) return
@@ -127,6 +229,8 @@ export default function Subscribers() {
     setStoredAdminToken(trimmed)
     setQuotesError(null)
     setEmployeeError(null)
+    setAccessMessage(null)
+    setView((prev) => (prev === 'clients' && !canViewClients ? 'employees' : prev))
   }
 
   function handleClearToken() {
@@ -135,6 +239,152 @@ export default function Subscribers() {
     setAdminTokenInput('')
     setEmployees([])
     setQuotes([])
+    setAccessGrants([])
+    setAccessForm(emptyAccessForm)
+    setAccessMessage(null)
+    refreshAccess()
+  }
+
+  React.useEffect(() => {
+    if (view === 'access' && !canManageAccess) {
+      if (canViewEmployees) setView('employees')
+      else if (canViewClients) setView('clients')
+    } else if (view === 'employees' && !canViewEmployees) {
+      if (canViewClients) setView('clients')
+      else if (canManageAccess) setView('access')
+    } else if (view === 'clients' && !canViewClients) {
+      if (canViewEmployees) setView('employees')
+      else if (canManageAccess) setView('access')
+    }
+  }, [view, canManageAccess, canViewEmployees, canViewClients])
+
+  function handleAccessInputChange(e) {
+    const { name, value } = e.target
+    setAccessForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function startEditingAccess(grant) {
+    setAccessMessage(null)
+    setAccessForm({
+      id: grant.id || '',
+      email: grant.email || '',
+      name: grant.name || '',
+      role: grant.role || 'client',
+      status: grant.status || 'active',
+      notes: grant.notes || ''
+    })
+  }
+
+  function resetAccessForm() {
+    setAccessForm(emptyAccessForm)
+  }
+
+  async function persistAccess(payload) {
+    const res = await authFetch('/api/access-grants-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    let data = {}
+    try {
+      data = await res.json()
+    } catch {
+      data = {}
+    }
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to save access record')
+    }
+    return data.item
+  }
+
+  async function handleSaveAccess(e) {
+    e.preventDefault()
+    if (!canManageAccess) return
+    const trimmedEmail = accessForm.email.trim().toLowerCase()
+    if (!trimmedEmail) {
+      setAccessMessage({ type: 'error', text: 'Email is required.' })
+      return
+    }
+    setSavingAccess(true)
+    setAccessMessage(null)
+    try {
+      const payload = {
+        id: accessForm.id || undefined,
+        email: trimmedEmail,
+        name: accessForm.name.trim(),
+        role: accessForm.role,
+        status: accessForm.status,
+        notes: accessForm.notes.trim()
+      }
+      await persistAccess(payload)
+      setAccessMessage({ type: 'success', text: accessForm.id ? 'Access updated.' : 'Access granted.' })
+      resetAccessForm()
+      await loadAccessGrants()
+      refreshAccess()
+    } catch (err) {
+      setAccessMessage({ type: 'error', text: err.message || 'Failed to save access record' })
+    } finally {
+      setSavingAccess(false)
+    }
+  }
+
+  async function handleToggleAccessStatus(grant, nextStatus) {
+    if (!canManageAccess) return
+    setAccessMessage(null)
+    setUpdatingAccessId(grant.id)
+    try {
+      await persistAccess({
+        id: grant.id,
+        email: grant.email,
+        name: grant.name || '',
+        role: grant.role || 'client',
+        status: nextStatus,
+        notes: grant.notes || ''
+      })
+      setAccessMessage({
+        type: 'success',
+        text: nextStatus === 'active' ? 'Access reinstated.' : 'Access suspended.'
+      })
+      await loadAccessGrants()
+      refreshAccess()
+    } catch (err) {
+      setAccessMessage({ type: 'error', text: err.message || 'Failed to update access status' })
+    } finally {
+      setUpdatingAccessId(null)
+    }
+  }
+
+  async function handleDeleteAccess(id) {
+    if (!canManageAccess || !id) return
+    if (typeof window !== 'undefined' && !window.confirm('Remove this account?')) return
+    setAccessMessage(null)
+    setDeletingAccessId(id)
+    try {
+      const res = await authFetch('/api/access-grants-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      let data = {}
+      try {
+        data = await res.json()
+      } catch {
+        data = {}
+      }
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to remove access')
+      }
+      if (accessForm.id === id) {
+        resetAccessForm()
+      }
+      setAccessMessage({ type: 'success', text: 'Access removed.' })
+      await loadAccessGrants()
+      refreshAccess()
+    } catch (err) {
+      setAccessMessage({ type: 'error', text: err.message || 'Failed to remove access' })
+    } finally {
+      setDeletingAccessId(null)
+    }
   }
 
   function handleEmployeeInputChange(e) {
@@ -165,6 +415,10 @@ export default function Subscribers() {
 
   async function handleSaveEmployee(e) {
     e.preventDefault()
+    if (!canManageEmployees) {
+      setEmployeeMessage({ type: 'error', text: 'Only administrators can modify team members.' })
+      return
+    }
     setEmployeeMessage(null)
     setSavingEmployee(true)
     try {
@@ -183,7 +437,7 @@ export default function Subscribers() {
   }
 
   async function handleDeleteEmployee(id) {
-    if (!id) return
+    if (!id || !canManageEmployees) return
     if (typeof window !== 'undefined' && !window.confirm('Remove this employee?')) return
     setEmployeeMessage(null)
     setDeletingEmployeeId(id)
@@ -216,7 +470,7 @@ export default function Subscribers() {
 
   async function handleStatusChange(id, status) {
     const target = employees.find((emp) => emp.id === id)
-    if (!target) return
+    if (!target || !canManageEmployees) return
     setEmployeeMessage(null)
     setUpdatingStatusId(id)
     try {
@@ -253,12 +507,32 @@ export default function Subscribers() {
   }
 
   async function handleRefreshAll() {
-    await Promise.all([loadEmployees(), loadQuotes()])
+    await Promise.all([
+      canViewEmployees ? loadEmployees() : Promise.resolve(),
+      canViewClients ? loadQuotes() : Promise.resolve(),
+      canManageAccess ? loadAccessGrants() : Promise.resolve()
+    ])
+    if (!storedAdminToken) {
+      refreshAccess()
+    }
   }
   const employeesStats = React.useMemo(() => computeEmployeeStats(employees), [employees])
   const recentHires = React.useMemo(() => computeRecentHires(employees), [employees])
   const anniversaries = React.useMemo(() => computeUpcomingAnniversaries(employees), [employees])
   const clientsStats = React.useMemo(() => computeClientStats(quotes), [quotes])
+  const accessStats = React.useMemo(() => computeAccessStats(accessGrants), [accessGrants])
+  const filteredAccessGrants = React.useMemo(() => {
+    const search = accessSearch.trim().toLowerCase()
+    return accessGrants
+      .filter((item) => (accessStatusFilter === 'all' ? true : item.status === accessStatusFilter))
+      .filter((item) => (accessRoleFilter === 'all' ? true : item.role === accessRoleFilter))
+      .filter((item) => {
+        if (!search) return true
+        return [item.email, item.name, item.notes, item.role]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(search))
+      })
+  }, [accessGrants, accessStatusFilter, accessRoleFilter, accessSearch])
 
   const filteredQuotes = React.useMemo(() => {
     const needle = searchTerm.trim().toLowerCase()
@@ -290,12 +564,18 @@ export default function Subscribers() {
         <title>Operations Dashboard — VetWraps</title>
       </Helmet>
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-        {!ready ? (
-          <p className="text-white/70">Loading…</p>
+        {!ready || identityChecking ? (
+          <p className="text-white/70">{identityChecking ? 'Verifying access…' : 'Loading…'}</p>
         ) : !hasAccess ? (
           <div className="text-center">
             <h1 className="text-2xl font-semibold tracking-tight">Restricted</h1>
-            <p className="text-white/70 mt-2 text-sm">Provide an admin token or sign in.</p>
+            {user && !storedAdminToken ? (
+              <p className="text-white/70 mt-2 text-sm">
+                {accessReason || 'Your Google account has not been approved yet.'}
+              </p>
+            ) : (
+              <p className="text-white/70 mt-2 text-sm">Provide an admin token or sign in.</p>
+            )}
             <div className="mt-4 max-w-sm mx-auto space-y-3">
               <input
                 value={adminTokenInput}
@@ -310,13 +590,28 @@ export default function Subscribers() {
                 >
                   Use Token
                 </button>
-                <button
-                  onClick={login}
-                  className="px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50"
-                >
-                  Sign In
-                </button>
+                {!user ? (
+                  <button
+                    onClick={login}
+                    className="px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50"
+                  >
+                    Sign In
+                  </button>
+                ) : (
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-amber/50"
+                  >
+                    Sign Out
+                  </button>
+                )}
               </div>
+              {user && !storedAdminToken && (
+                <p className="text-xs text-white/50">
+                  Ask an administrator to authorize <span className="font-semibold text-white/70">{user.email}</span> or
+                  provide an admin token.
+                </p>
+              )}
             </div>
           </div>
         ) : (
@@ -327,7 +622,7 @@ export default function Subscribers() {
                 <p className="text-white/70 mt-2 text-sm">Welcome, {welcomeName}.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {storedAdminToken && !user && (
+                {storedAdminToken && (
                   <button
                     onClick={handleClearToken}
                     className="px-4 py-2 text-sm rounded bg-white/5 border border-white/10 hover:border-accent-amber/50"
@@ -353,28 +648,44 @@ export default function Subscribers() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => setView('employees')}
-                className={`px-4 py-2 text-xs tracking-[0.2em] uppercase rounded border ${
-                  view === 'employees'
-                    ? 'border-accent-blue/60 bg-accent-blue/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
-                }`}
-              >
-                Team
-              </button>
-              <button
-                onClick={() => setView('clients')}
-                className={`px-4 py-2 text-xs tracking-[0.2em] uppercase rounded border ${
-                  view === 'clients'
-                    ? 'border-accent-blue/60 bg-accent-blue/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
-                }`}
-              >
-                Clients
-              </button>
+              {canViewEmployees && (
+                <button
+                  onClick={() => setView('employees')}
+                  className={`px-4 py-2 text-xs tracking-[0.2em] uppercase rounded border ${
+                    view === 'employees'
+                      ? 'border-accent-blue/60 bg-accent-blue/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                >
+                  Team
+                </button>
+              )}
+              {canViewClients && (
+                <button
+                  onClick={() => setView('clients')}
+                  className={`px-4 py-2 text-xs tracking-[0.2em] uppercase rounded border ${
+                    view === 'clients'
+                      ? 'border-accent-blue/60 bg-accent-blue/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                >
+                  Clients
+                </button>
+              )}
+              {canManageAccess && (
+                <button
+                  onClick={() => setView('access')}
+                  className={`px-4 py-2 text-xs tracking-[0.2em] uppercase rounded border ${
+                    view === 'access'
+                      ? 'border-accent-blue/60 bg-accent-blue/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                >
+                  Access
+                </button>
+              )}
             </div>
-            {view === 'employees' ? (
+            {view === 'employees' && canViewEmployees ? (
               <section className="mt-8 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <StatCard label="Total Staff" value={employeesStats.total} description={`${employeesStats.active} active`} />
@@ -435,7 +746,7 @@ export default function Subscribers() {
                       </button>
                     )}
                   </div>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <fieldset disabled={employeeFormDisabled} className="mt-4 grid gap-4 md:grid-cols-2">
                     <div>
                       <label htmlFor="firstName" className="block text-sm mb-1">First Name</label>
                       <input
@@ -545,11 +856,11 @@ export default function Subscribers() {
                         className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
                       />
                     </div>
-                  </div>
+                  </fieldset>
                   <div className="mt-4 flex items-center gap-3">
                     <button
                       type="submit"
-                      disabled={savingEmployee}
+                      disabled={savingEmployee || employeeFormDisabled}
                       className="px-5 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50 disabled:opacity-60"
                     >
                       {savingEmployee ? 'Saving…' : employeeForm.id ? 'Update Employee' : 'Add Employee'}
@@ -558,10 +869,14 @@ export default function Subscribers() {
                       type="button"
                       onClick={resetEmployeeForm}
                       className="text-sm text-white/70 hover:text-white"
+                      disabled={employeeFormDisabled}
                     >
                       Reset
                     </button>
                   </div>
+                  {employeeFormDisabled && (
+                    <p className="mt-3 text-sm text-white/60">Only administrators can make staffing changes.</p>
+                  )}
                   {employeeMessage && (
                     <p className={`mt-3 text-sm ${employeeMessage.type === 'error' ? 'text-red-400' : 'text-accent-blue'}`}>
                       {employeeMessage.text}
@@ -609,7 +924,9 @@ export default function Subscribers() {
                                 <select
                                   value={emp.status}
                                   onChange={(e) => handleStatusChange(emp.id, e.target.value)}
-                                  disabled={updatingStatusId === emp.id || deletingEmployeeId === emp.id}
+                                  disabled={
+                                    employeeFormDisabled || updatingStatusId === emp.id || deletingEmployeeId === emp.id
+                                  }
                                   className="bg-white/5 border-white/15 rounded px-2 py-1 text-xs"
                                 >
                                   {employeeStatusOptions.map((opt) => (
@@ -623,13 +940,14 @@ export default function Subscribers() {
                                 <div className="flex flex-wrap gap-2 text-xs">
                                   <button
                                     onClick={() => startEditingEmployee(emp)}
+                                    disabled={employeeFormDisabled}
                                     className="px-2 py-1 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50"
                                   >
                                     Edit
                                   </button>
                                   <button
                                     onClick={() => handleDeleteEmployee(emp.id)}
-                                    disabled={deletingEmployeeId === emp.id}
+                                    disabled={employeeFormDisabled || deletingEmployeeId === emp.id}
                                     className="px-2 py-1 rounded bg-white/10 border border-white/15 hover:border-accent-amber/50 disabled:opacity-60"
                                   >
                                     {deletingEmployeeId === emp.id ? 'Removing…' : 'Remove'}
@@ -644,7 +962,7 @@ export default function Subscribers() {
                   )}
                 </div>
               </section>
-            ) : (
+            ) : view === 'clients' && canViewClients ? (
               <section className="mt-8 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <StatCard label="Total Requests" value={clientsStats.total} description={`${clientsStats.processed} processed`} />
@@ -696,6 +1014,11 @@ export default function Subscribers() {
                       </button>
                     </div>
                   </div>
+                  {quotesReadOnly && (
+                    <p className="text-xs text-white/60">
+                      Your role allows you to review client submissions without updating their status.
+                    </p>
+                  )}
                   {quoteMessage && (
                     <p className={`text-sm ${quoteMessage.type === 'error' ? 'text-red-400' : 'text-accent-blue'}`}>
                       {quoteMessage.text}
@@ -746,6 +1069,7 @@ export default function Subscribers() {
                                   employees={employees}
                                   onDone={loadQuotes}
                                   onMessage={setQuoteMessage}
+                                  canManage={canManageQuotes}
                                 />
                               </td>
                             </tr>
@@ -755,6 +1079,268 @@ export default function Subscribers() {
                     </div>
                   )}
                 </div>
+              </section>
+            ) : view === 'access' && canManageAccess ? (
+              <section className="mt-8 space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatCard label="Total Accounts" value={accessStats.total} description={`${accessStats.active} active`} />
+                  <StatCard label="Admins" value={accessStats.admins} description={`${accessStats.employees} team / ${accessStats.clients} clients`} />
+                  <StatCard label="Suspended" value={accessStats.suspended} description="Awaiting re-activation" />
+                  <StatCard
+                    label="Last Change"
+                    value={accessStats.lastUpdated ? formatDate(accessStats.lastUpdated) : '—'}
+                    description={accessStats.lastUpdated ? 'Most recent update' : 'No changes recorded'}
+                  />
+                </div>
+
+                <form onSubmit={handleSaveAccess} className="rounded-xl glass border border-glass p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-tight">
+                      {accessForm.id ? 'Update Access' : 'Grant Access'}
+                    </h2>
+                    {accessForm.id && (
+                      <button type="button" onClick={resetAccessForm} className="text-sm text-white/70 hover:text-white">
+                        Cancel edit
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label htmlFor="accessEmail" className="block text-sm mb-1">
+                        Google Email
+                      </label>
+                      <input
+                        id="accessEmail"
+                        name="email"
+                        type="email"
+                        value={accessForm.email}
+                        onChange={handleAccessInputChange}
+                        className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="accessName" className="block text-sm mb-1">
+                        Name (optional)
+                      </label>
+                      <input
+                        id="accessName"
+                        name="name"
+                        value={accessForm.name}
+                        onChange={handleAccessInputChange}
+                        className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="accessRole" className="block text-sm mb-1">
+                        Role
+                      </label>
+                      <select
+                        id="accessRole"
+                        name="role"
+                        value={accessForm.role}
+                        onChange={handleAccessInputChange}
+                        className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
+                      >
+                        {accessRoleOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="accessStatus" className="block text-sm mb-1">
+                        Status
+                      </label>
+                      <select
+                        id="accessStatus"
+                        name="status"
+                        value={accessForm.status}
+                        onChange={handleAccessInputChange}
+                        className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
+                      >
+                        {accessStatusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label htmlFor="accessNotes" className="block text-sm mb-1">
+                        Notes
+                      </label>
+                      <textarea
+                        id="accessNotes"
+                        name="notes"
+                        rows={3}
+                        value={accessForm.notes}
+                        onChange={handleAccessInputChange}
+                        className="w-full bg-white/5 border-white/15 rounded-md px-3 py-2"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={savingAccess}
+                      className="px-5 py-2 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50 disabled:opacity-60"
+                    >
+                      {savingAccess ? 'Saving…' : accessForm.id ? 'Save Changes' : 'Authorize Account'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetAccessForm}
+                      className="text-sm text-white/70 hover:text-white"
+                      disabled={savingAccess}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  {accessMessage && (
+                    <p className={`mt-3 text-sm ${accessMessage.type === 'error' ? 'text-red-400' : 'text-accent-blue'}`}>
+                      {accessMessage.text}
+                    </p>
+                  )}
+                </form>
+
+                <div className="rounded-xl glass border border-glass p-6 space-y-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex flex-wrap gap-3 items-end">
+                      <label className="text-sm">
+                        <span className="block mb-1 text-white/70">Status</span>
+                        <select
+                          value={accessStatusFilter}
+                          onChange={(e) => setAccessStatusFilter(e.target.value)}
+                          className="bg-white/5 border-white/15 rounded px-3 py-2 text-sm"
+                        >
+                          <option value="all">All</option>
+                          {accessStatusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-sm">
+                        <span className="block mb-1 text-white/70">Role</span>
+                        <select
+                          value={accessRoleFilter}
+                          onChange={(e) => setAccessRoleFilter(e.target.value)}
+                          className="bg-white/5 border-white/15 rounded px-3 py-2 text-sm"
+                        >
+                          <option value="all">All</option>
+                          {accessRoleOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-sm">
+                        <span className="block mb-1 text-white/70">Search</span>
+                        <input
+                          value={accessSearch}
+                          onChange={(e) => setAccessSearch(e.target.value)}
+                          placeholder="Email, name, notes…"
+                          className="bg-white/5 border-white/15 rounded px-3 py-2 text-sm min-w-[220px]"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => loadAccessGrants()}
+                        type="button"
+                        className="px-4 py-2 text-sm rounded bg-white/5 border border-white/10 hover:border-accent-blue/50 disabled:opacity-60"
+                        disabled={loadingAccessGrants}
+                      >
+                        Reload
+                      </button>
+                    </div>
+                  </div>
+                  {loadingAccessGrants && <p className="text-sm text-white/60">Loading authorized accounts…</p>}
+                  {accessMessage && accessMessage.type === 'error' && (
+                    <p className="text-sm text-red-400">{accessMessage.text}</p>
+                  )}
+                  {!loadingAccessGrants && filteredAccessGrants.length === 0 ? (
+                    <p className="text-sm text-white/60">No accounts match the current filters.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead className="text-white/60">
+                          <tr>
+                            <th className="text-left py-2 pr-4">Email</th>
+                            <th className="text-left py-2 pr-4">Name</th>
+                            <th className="text-left py-2 pr-4">Role</th>
+                            <th className="text-left py-2 pr-4">Status</th>
+                            <th className="text-left py-2 pr-4">Last Seen</th>
+                            <th className="text-left py-2 pr-4">Notes</th>
+                            <th className="text-left py-2 pr-4">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAccessGrants.map((grant) => (
+                            <tr key={grant.id || grant.email} className="border-t border-white/10">
+                              <td className="py-2 pr-4 font-medium break-all">{grant.email}</td>
+                              <td className="py-2 pr-4 text-white/70">{grant.name || '—'}</td>
+                              <td className="py-2 pr-4 text-white/70 capitalize">{grant.role}</td>
+                              <td className="py-2 pr-4">
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs border ${
+                                    grant.status === 'active'
+                                      ? 'border-accent-blue/40 bg-accent-blue/10 text-accent-blue'
+                                      : 'border-accent-amber/40 bg-accent-amber/10 text-accent-amber'
+                                  }`}
+                                >
+                                  {grant.status === 'active' ? 'Active' : 'Suspended'}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-4 text-white/60 text-xs">
+                                {grant.lastSeenAt ? formatDate(grant.lastSeenAt) : '—'}
+                              </td>
+                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{grant.notes || '—'}</td>
+                              <td className="py-2 pr-4">
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingAccess(grant)}
+                                    disabled={updatingAccessId === grant.id || deletingAccessId === grant.id}
+                                    className="px-2 py-1 rounded bg-white/10 border border-white/15 hover:border-accent-blue/50"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAccessStatus(grant, grant.status === 'active' ? 'suspended' : 'active')}
+                                    disabled={updatingAccessId === grant.id || deletingAccessId === grant.id}
+                                    className="px-2 py-1 rounded bg-white/10 border border-white/15 hover:border-accent-amber/50"
+                                  >
+                                    {grant.status === 'active' ? 'Suspend' : 'Activate'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteAccess(grant.id)}
+                                    disabled={deletingAccessId === grant.id || updatingAccessId === grant.id}
+                                    className="px-2 py-1 rounded bg-white/10 border border-white/15 hover:border-red-400/60 disabled:opacity-60"
+                                  >
+                                    {deletingAccessId === grant.id ? 'Removing…' : 'Remove'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </section>
+            ) : (
+              <section className="mt-8">
+                <p className="text-sm text-white/60">
+                  Access to this workspace is restricted for your account. Please contact an administrator for assistance.
+                </p>
               </section>
             )}
           </>
@@ -781,6 +1367,21 @@ function mapEmployeeRecord(row) {
   }
 }
 
+function mapAccessGrant(row = {}) {
+  return {
+    id: row.id || null,
+    email: row.email || '',
+    name: row.name || '',
+    role: (row.role || 'client').toLowerCase(),
+    status: (row.status || 'active').toLowerCase(),
+    notes: row.notes || '',
+    createdAt: row.created_at || row.createdAt || null,
+    updatedAt: row.updated_at || row.updatedAt || null,
+    lastSeenAt: row.last_seen_at || row.lastSeenAt || null,
+    lastSeenIp: row.last_seen_ip || row.lastSeenIp || ''
+  }
+}
+
 function prepareEmployeePayload(form) {
   return {
     id: form.id || undefined,
@@ -793,6 +1394,48 @@ function prepareEmployeePayload(form) {
     status: form.status || 'active',
     hourlyRate: form.hourlyRate === null || form.hourlyRate === undefined ? '' : String(form.hourlyRate).trim(),
     notes: (form.notes || '').trim()
+  }
+}
+
+function computeAccessStats(items = []) {
+  if (!items.length) {
+    return {
+      total: 0,
+      active: 0,
+      suspended: 0,
+      admins: 0,
+      employees: 0,
+      clients: 0,
+      lastUpdated: null
+    }
+  }
+  let active = 0
+  let suspended = 0
+  let admins = 0
+  let employeesCount = 0
+  let clientsCount = 0
+  let lastUpdated = null
+  items.forEach((item) => {
+    const status = (item.status || 'active').toLowerCase()
+    if (status === 'active') active += 1
+    else suspended += 1
+    const role = (item.role || 'client').toLowerCase()
+    if (role === 'admin') admins += 1
+    else if (role === 'employee') employeesCount += 1
+    else clientsCount += 1
+    const updated = parseISODate(item.updatedAt || item.updated_at)
+    if (updated && (!lastUpdated || updated > lastUpdated)) {
+      lastUpdated = updated
+    }
+  })
+  return {
+    total: items.length,
+    active,
+    suspended,
+    admins,
+    employees: employeesCount,
+    clients: clientsCount,
+    lastUpdated
   }
 }
 
@@ -1075,8 +1718,12 @@ function escapeCsv(value) {
   return str
 }
 
-function RowActions({ quote, employees, onDone, onMessage }) {
+function RowActions({ quote, employees, onDone, onMessage, canManage = true }) {
   const [busy, setBusy] = React.useState(false)
+
+  if (!canManage) {
+    return <p className="text-xs text-white/50">View only</p>
+  }
 
   async function update(payload) {
     onMessage?.(null)

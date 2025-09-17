@@ -11,8 +11,28 @@ const navItems = [
 ]
 
 export default function Navbar() {
-  const { user, login, logout, ready } = useIdentity()
-  const isAuthed = ready && !!user
+  const { user, login, logout, ready, hasDashboardAccess } = useIdentity()
+  const [hasAdminToken, setHasAdminToken] = React.useState(false)
+
+  React.useEffect(() => {
+    function syncToken() {
+      try {
+        const token = localStorage.getItem('vetwraps_admin_token')
+        setHasAdminToken(Boolean(token))
+      } catch {
+        setHasAdminToken(false)
+      }
+    }
+    syncToken()
+    window.addEventListener('storage', syncToken)
+    window.addEventListener('focus', syncToken)
+    return () => {
+      window.removeEventListener('storage', syncToken)
+      window.removeEventListener('focus', syncToken)
+    }
+  }, [])
+
+  const showDashboardLink = hasDashboardAccess || hasAdminToken
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-night/70 border-b border-white/5">
@@ -29,7 +49,7 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
-          {isAuthed ? (
+          {showDashboardLink ? (
             <>
               <Link
                 to="/subscribers"
@@ -37,15 +57,17 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white focusable transition-colors"
-              >
-                Log Out
-              </button>
+              {user && (
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white focusable transition-colors"
+                >
+                  Log Out
+                </button>
+              )}
             </>
-          ) : (
+          ) : ready ? (
             <button
               type="button"
               onClick={login}
@@ -53,6 +75,9 @@ export default function Navbar() {
             >
               Log In
             </button>
+          ) : null}
+          {!showDashboardLink && !user && !ready && (
+            <span className="text-[11px] tracking-[0.2em] uppercase text-white/60">Loading…</span>
           )}
           <a href="#contact" className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10">
             Start Project
@@ -67,20 +92,22 @@ export default function Navbar() {
                   {item.label}
                 </a>
               ))}
-              {isAuthed ? (
+              {showDashboardLink ? (
                 <>
                   <Link to="/subscribers" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">
                     Dashboard
                   </Link>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 rounded"
-                  >
-                    Log Out
-                  </button>
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 rounded"
+                    >
+                      Log Out
+                    </button>
+                  )}
                 </>
-              ) : (
+              ) : ready ? (
                 <button
                   type="button"
                   onClick={login}
@@ -88,6 +115,8 @@ export default function Navbar() {
                 >
                   Log In
                 </button>
+              ) : (
+                <span className="block px-3 py-2 text-sm text-white/60">Loading…</span>
               )}
               <a href="#contact" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Start Project</a>
             </div>

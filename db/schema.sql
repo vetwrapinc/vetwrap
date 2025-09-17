@@ -50,3 +50,23 @@ alter table public.employees enable row level security;
 create index if not exists employees_status_idx on public.employees (status);
 create index if not exists employees_last_name_idx on public.employees (last_name);
 
+-- Access control for Identity accounts (admins, employees, clients)
+create table if not exists public.access_grants (
+  id uuid primary key default uuid_generate_v4(),
+  email text not null unique,
+  name text,
+  role text not null default 'client', -- admin | employee | client
+  status text not null default 'active', -- active | suspended
+  notes text,
+  last_seen_at timestamptz,
+  last_seen_ip text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.access_grants enable row level security;
+
+create index if not exists access_grants_email_idx on public.access_grants (email);
+create index if not exists access_grants_role_idx on public.access_grants (role);
+create index if not exists access_grants_status_idx on public.access_grants (status);
+
