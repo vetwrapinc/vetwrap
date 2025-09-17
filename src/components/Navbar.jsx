@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useIdentity } from '../utils/identity'
 
 const navItems = [
   { label: 'Services', href: '#services' },
@@ -10,6 +11,9 @@ const navItems = [
 ]
 
 export default function Navbar() {
+  const { user, login, logout, ready } = useIdentity()
+  const isAuthed = ready && !!user
+
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-night/70 border-b border-white/5">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" aria-label="Primary">
@@ -25,6 +29,31 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
+          {isAuthed ? (
+            <>
+              <Link
+                to="/subscribers"
+                className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
+              >
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white focusable transition-colors"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={login}
+              className="text-[11px] tracking-[0.2em] uppercase text-white/70 hover:text-white focusable transition-colors"
+            >
+              Log In
+            </button>
+          )}
           <a href="#contact" className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10">
             Start Project
           </a>
@@ -38,6 +67,28 @@ export default function Navbar() {
                   {item.label}
                 </a>
               ))}
+              {isAuthed ? (
+                <>
+                  <Link to="/subscribers" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">
+                    Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/10 rounded"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={login}
+                  className="w-full text-left px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded"
+                >
+                  Log In
+                </button>
+              )}
               <a href="#contact" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Start Project</a>
             </div>
           </details>
