@@ -38,12 +38,22 @@ module.exports = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' }
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: 0.35, transform: 'scale(0.95)' },
+          '50%': { opacity: 0.65, transform: 'scale(1.05)' }
+        },
+        drift: {
+          '0%, 100%': { transform: 'translate3d(0, 0, 0)' },
+          '50%': { transform: 'translate3d(18px, -12px, 0)' }
         }
       },
       animation: {
         float: 'float 6s ease-in-out infinite',
         orbit: 'orbit 14s linear infinite',
-        shimmer: 'shimmer 3s linear infinite'
+        shimmer: 'shimmer 3s linear infinite',
+        pulseSlow: 'glowPulse 10s ease-in-out infinite',
+        drift: 'drift 16s ease-in-out infinite'
       },
       backgroundImage: {
         orbital: 'radial-gradient(1200px 600px at 10% -10%, rgba(95,183,250,0.18), transparent 60%), radial-gradient(1000px 500px at 110% 10%, rgba(255,178,106,0.14), transparent 60%)',

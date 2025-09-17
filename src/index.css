@@ -46,3 +46,10 @@ html { scroll-behavior: smooth; }
 .tilt { transform-style: preserve-3d; }
 .tilt > * { transform: translateZ(20px); }
 
+/* Route transition wrapper */
+.page-transition-frame {
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+}
+
