@@ -7,8 +7,7 @@ import {
   ADMIN_ACCOUNT,
   EMPLOYEE_ACCOUNTS,
   CLIENT_ACCOUNTS,
-  findAccountByEmail,
-  DEMO_CREDENTIALS
+  findAccountByEmail
 } from '../utils/authConfig'
 import {
   loadPortalState,
@@ -158,7 +157,6 @@ export default function Portal() {
             />
           )}
 
-          <CredentialHelper />
         </div>
       </main>
       <Footer />
@@ -634,50 +632,21 @@ function InlineAlert({ variant, message, onDismiss }) {
   )
 }
 
-function CredentialHelper() {
-  const [open, setOpen] = React.useState(false)
-  return (
-    <section className="mt-16">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-2 text-sm text-white/60 hover:text-white"
-      >
-        <span className="text-xs uppercase tracking-[0.2em]">Need demo credentials?</span>
-        <span>{open ? '−' : '+'}</span>
-      </button>
-      {open && (
-        <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm text-white/70">
-          <CredentialColumn title="Admin" entries={[DEMO_CREDENTIALS.admin]} />
-          <CredentialColumn title="Employees" entries={DEMO_CREDENTIALS.employee} />
-          <CredentialColumn title="Clients" entries={DEMO_CREDENTIALS.client} />
-        </div>
-      )}
-      <p className="mt-3 text-xs text-white/40">Passwords are stored as bcrypt hashes and assignments are encrypted at rest.</p>
-    </section>
-  )
-}
-
-function CredentialColumn({ title, entries }) {
-  return (
-    <div className="glass border border-white/10 rounded-xl p-4 space-y-2">
-      <p className="text-xs uppercase tracking-[0.3em] text-white/40">{title}</p>
-      {entries.map((entry) => (
-        <div key={entry.email} className="text-white/70">
-          <p className="font-medium text-white">{entry.email}</p>
-          <p className="text-xs">Password: {entry.password}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function GradientBackdrop() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-accent-blue/20 blur-3xl" />
-      <div className="absolute bottom-10 right-10 h-72 w-72 rounded-full bg-accent-orange/10 blur-3xl" />
-      <div className="absolute -bottom-32 left-16 h-80 w-80 rounded-full bg-accent-blue/10 blur-3xl" />
+      <div
+        className="absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-accent-blue/20 blur-3xl animate-drift"
+        style={{ animationDelay: '0s' }}
+      />
+      <div
+        className="absolute bottom-10 right-10 h-72 w-72 rounded-full bg-accent-orange/10 blur-3xl animate-pulseSlow"
+        style={{ animationDelay: '1.2s' }}
+      />
+      <div
+        className="absolute -bottom-32 left-16 h-80 w-80 rounded-full bg-accent-blue/10 blur-3xl animate-drift"
+        style={{ animationDelay: '2.4s', animationDirection: 'alternate' }}
+      />
     </div>
   )
 }

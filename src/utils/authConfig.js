@@ -1,8 +1,8 @@
 export const ADMIN_ACCOUNT = {
   id: 'admin-ops',
   name: 'Operations Admin',
-  email: 'operations@vetwraps.com',
-  passwordHash: '$2b$10$raQmtlvSNPN7aU/mTmL5vuKhmboAKNrkFv1r8M1/sX.T/wYrQ92r6'
+  email: 'vetwrapsinc@gmail.com',
+  passwordHash: '$2b$10$8yxVy3UUFcdYa0Kvh3kkcurC3cL8Y2Yse61Zf/wNJQBWyTFJnu4re'
 }
 
 export const EMPLOYEE_ACCOUNTS = [
@@ -10,9 +10,9 @@ export const EMPLOYEE_ACCOUNTS = [
     id: 'ava-hayes',
     name: 'Ava Hayes',
     title: 'Senior Account Lead',
-    email: 'ava.hayes@vetwraps.com',
+    email: 'cabletomusic@gmail.com',
     focus: 'Franchise onboarding and launch playbooks',
-    passwordHash: '$2b$10$6EASViIG4LFnUoDRG9fE3eGineyCmyM2jLZ2N3RodvYGUbrt125qa'
+    passwordHash: '$2b$10$aFlVl5O4NEXkA38GVFE6Rujcqle3yvJhT3S4zH327ocN6FSfUCvN6'
   },
   {
     id: 'marco-santos',
@@ -64,17 +64,4 @@ export function findAccountByEmail(role, email) {
     return CLIENT_ACCOUNTS.find((account) => account.email === normalized) || null
   }
   return null
-}
-
-export const DEMO_CREDENTIALS = {
-  admin: { email: ADMIN_ACCOUNT.email, password: 'WrapAdmin!24' },
-  employee: [
-    { email: EMPLOYEE_ACCOUNTS[0].email, password: 'TeamVet123' },
-    { email: EMPLOYEE_ACCOUNTS[1].email, password: 'CareCrew#9' }
-  ],
-  client: [
-    { email: CLIENT_ACCOUNTS[0].email, password: 'TailWag#7' },
-    { email: CLIENT_ACCOUNTS[1].email, password: 'Pawsitive@2' },
-    { email: CLIENT_ACCOUNTS[2].email, password: 'PetParent!1' }
-  ]
 }

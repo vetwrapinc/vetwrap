@@ -1,4 +1,5 @@
 import React from 'react'
+import Reveal from './Reveal'
 
 const items = [
   { title: 'Precision Esports', tag: 'Brand System' },
@@ -11,13 +12,13 @@ export default function Portfolio() {
   return (
     <section id="portfolio" aria-labelledby="portfolio-title" className="py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-6 mb-10">
+        <Reveal as="div" className="flex items-end justify-between gap-6 mb-10">
           <h2 id="portfolio-title" className="text-2xl sm:text-3xl font-semibold tracking-tight">Portfolio</h2>
           <p className="text-sm text-white/70 max-w-xl">Hover-tilt previews. Case studies coming soon.</p>
-        </div>
+        </Reveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {items.map((item) => (
-            <TiltCard key={item.title} {...item} />
+          {items.map((item, index) => (
+            <TiltCard key={item.title} index={index} {...item} />
           ))}
         </div>
       </div>
@@ -25,7 +26,7 @@ export default function Portfolio() {
   )
 }
 
-function TiltCard({ title, tag }) {
+function TiltCard({ title, tag, index }) {
   const ref = React.useRef(null)
   function onMove(e) {
     const el = ref.current
@@ -43,7 +44,7 @@ function TiltCard({ title, tag }) {
     el.style.transform = 'rotateX(0) rotateY(0)'
   }
   return (
-    <article className="group perspective">
+    <Reveal as="article" delay={index * 0.08} className="group perspective">
       <div
         ref={ref}
         onMouseMove={onMove}
@@ -68,7 +69,7 @@ function TiltCard({ title, tag }) {
           <span className="px-2 py-0.5 rounded bg-white/10 border border-white/10 text-white/80">{tag}</span>
         </div>
       </div>
-    </article>
+    </Reveal>
   )
 }
 
