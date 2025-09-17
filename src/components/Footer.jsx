@@ -24,6 +24,7 @@ export default function Footer() {
           <ul className="space-y-2 text-white/80">
             <li><Link to="/case-studies" className="hover:text-white">Case Studies</Link></li>
             <li><Link to="/whats-new" className="hover:text-white">What’s New?</Link></li>
+            <li><Link to="/portal" className="hover:text-white">Portal Login</Link></li>
             <li><a href="mailto:vetwrapinc@gmail.com" className="hover:text-white">vetwrapinc@gmail.com</a></li>
           </ul>
         </nav>

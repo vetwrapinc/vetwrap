@@ -2,11 +2,11 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 const navItems = [
-  { label: 'Services', href: '#services' },
-  { label: 'Why Us', href: '#why-us' },
-  { label: 'Portfolio', href: '#portfolio' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Contact', href: '#contact' }
+  { label: 'Services', hash: '#services' },
+  { label: 'Why Us', hash: '#why-us' },
+  { label: 'Portfolio', hash: '#portfolio' },
+  { label: 'Pricing', hash: '#pricing' },
+  { label: 'Contact', hash: '#contact' }
 ]
 
 export default function Navbar() {
@@ -21,24 +21,47 @@ export default function Navbar() {
         </Link>
         <div className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
-            <a key={item.label} href={item.href} className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors">
+            <Link
+              key={item.label}
+              to={{ pathname: '/', hash: item.hash }}
+              className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
+            >
               {item.label}
-            </a>
+            </Link>
           ))}
-          <a href="#contact" className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10">
+          <Link
+            to="/portal"
+            className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10"
+          >
+            Portal Login
+          </Link>
+          <Link
+            to={{ pathname: '/', hash: '#contact' }}
+            className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10"
+          >
             Start Project
-          </a>
+          </Link>
         </div>
         <div className="md:hidden">
           <details>
             <summary className="list-none text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10 cursor-pointer">Menu</summary>
             <div className="absolute right-4 mt-2 w-48 glass rounded p-2 border border-glass">
               {navItems.map((item) => (
-                <a key={item.label} href={item.href} className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">
+                <Link
+                  key={item.label}
+                  to={{ pathname: '/', hash: item.hash }}
+                  className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded"
+                >
                   {item.label}
-                </a>
+                </Link>
               ))}
-              <a href="#contact" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Start Project</a>
+              <Link to="/portal" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Portal Login</Link>
+              <Link
+                to={{ pathname: '/', hash: '#contact' }}
+                className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded"
+              >
+                Start Project
+              </Link>
             </div>
           </details>
         </div>
