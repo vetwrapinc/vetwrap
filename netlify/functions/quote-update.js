@@ -2,14 +2,14 @@
 // Env:
 // - ADMIN_EMAILS, SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_TABLE
 
-const { verifyAdminToken, json } = require('./_auth')
+const { requireAccess, json } = require('./_auth')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST' && event.httpMethod !== 'PATCH') {
     return json(405, { error: 'Method Not Allowed' })
   }
   try {
-    verifyAdminToken(event)
+    await requireAccess(event, { allow: ['admin', 'employee'] })
   } catch (e) {
     return json(401, { error: e.message || 'Unauthorized' })
   }
