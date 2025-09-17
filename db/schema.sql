@@ -29,3 +29,24 @@ alter table public.quotes add column if not exists "processedAt" timestamptz;
 alter table public.quotes add column if not exists assignee text;
 create index if not exists quotes_status_idx on public.quotes (status);
 
+-- Employees directory for internal operations
+create table if not exists public.employees (
+  id uuid primary key default uuid_generate_v4(),
+  first_name text not null,
+  last_name text not null,
+  email text not null,
+  role text not null,
+  phone text,
+  start_date date,
+  status text not null default 'active', -- active | on_leave | former
+  hourly_rate numeric,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.employees enable row level security;
+
+create index if not exists employees_status_idx on public.employees (status);
+create index if not exists employees_last_name_idx on public.employees (last_name);
+
