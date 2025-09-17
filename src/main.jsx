@@ -1,27 +1,45 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
+import { AnimatePresence } from 'framer-motion'
 import App from './App'
 import './index.css'
 import Subscribers from './routes/Subscribers'
 import CaseStudies from './routes/CaseStudies'
 import CaseStudy from './routes/CaseStudy'
 import WhatsNew from './routes/WhatsNew'
+import Portal from './routes/Portal'
 import { Analytics } from './utils/analytics'
+import PageTransition from './components/PageTransition'
+
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [location.pathname])
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><App /></PageTransition>} />
+        <Route path="/subscribers" element={<PageTransition><Subscribers /></PageTransition>} />
+        <Route path="/case-studies" element={<PageTransition><CaseStudies /></PageTransition>} />
+        <Route path="/case-studies/:slug" element={<PageTransition><CaseStudy /></PageTransition>} />
+        <Route path="/whats-new" element={<PageTransition><WhatsNew /></PageTransition>} />
+        <Route path="/portal" element={<PageTransition><Portal /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  )
+}
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
       <BrowserRouter>
         <Analytics />
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/subscribers" element={<Subscribers />} />
-          <Route path="/case-studies" element={<CaseStudies />} />
-          <Route path="/case-studies/:slug" element={<CaseStudy />} />
-          <Route path="/whats-new" element={<WhatsNew />} />
-        </Routes>
+        <AnimatedRoutes />
       </BrowserRouter>
     </HelmetProvider>
   </React.StrictMode>

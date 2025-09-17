@@ -1,4 +1,5 @@
 import React from 'react'
+import Reveal from './Reveal'
 
 export default function Contact() {
   const [rush, setRush] = React.useState(false)
@@ -65,7 +66,7 @@ export default function Contact() {
     <section id="contact" aria-labelledby="contact-title" className="py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-10 items-start">
-          <div>
+          <Reveal as="div" delay={0.05}>
             <h2 id="contact-title" className="text-2xl sm:text-3xl font-semibold tracking-tight">Request a Quote</h2>
             <p className="text-white/70 mt-3 text-sm max-w-prose">
               Styled like a professional quote. This form posts to a backend endpoint you can deploy later. Includes honeypot spam protection and optional reCAPTCHA (env-based).
@@ -75,9 +76,9 @@ export default function Contact() {
               <li>• Optional Rush (+$400, 4–7 days)</li>
               <li>• Optional Notes</li>
             </ul>
-          </div>
+          </Reveal>
 
-          <form onSubmit={onSubmit} className="rounded-2xl glass border border-glass p-6" aria-describedby="contact-help">
+          <Reveal as="form" delay={0.15} onSubmit={onSubmit} className="rounded-2xl glass border border-glass p-6" aria-describedby="contact-help">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm mb-1">Name</label>
@@ -126,7 +127,7 @@ export default function Contact() {
             {status && (
               <div className={`mt-4 text-sm ${status.ok ? 'text-accent-blue' : 'text-red-400'}`}>{status.msg}</div>
             )}
-          </form>
+          </Reveal>
         </div>
       </div>
     </section>
