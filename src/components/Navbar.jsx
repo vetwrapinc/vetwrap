@@ -25,6 +25,12 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
+          <Link
+            to="/portal"
+            className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10"
+          >
+            Portal Login
+          </Link>
           <a href="#contact" className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10">
             Start Project
           </a>
@@ -38,6 +44,7 @@ export default function Navbar() {
                   {item.label}
                 </a>
               ))}
+              <Link to="/portal" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Portal Login</Link>
               <a href="#contact" className="block px-3 py-2 text-sm text-white/85 hover:bg-white/10 rounded">Start Project</a>
             </div>
           </details>

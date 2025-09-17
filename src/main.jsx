@@ -8,6 +8,7 @@ import Subscribers from './routes/Subscribers'
 import CaseStudies from './routes/CaseStudies'
 import CaseStudy from './routes/CaseStudy'
 import WhatsNew from './routes/WhatsNew'
+import Portal from './routes/Portal'
 import { Analytics } from './utils/analytics'
 
 createRoot(document.getElementById('root')).render(
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudy />} />
           <Route path="/whats-new" element={<WhatsNew />} />
+          <Route path="/portal" element={<Portal />} />
         </Routes>
       </BrowserRouter>
     </HelmetProvider>
