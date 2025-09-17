@@ -13,11 +13,7 @@ const items = [
     tag: 'Product Launch',
     image: '/portfolio/sentinel-home.svg',
     alt: 'Sentinel Home Systems smart security landing mockup'
-  },
-  { title: 'Precision Esports', tag: 'Brand System' },
-  { title: 'Northline Logistics', tag: 'Logo' },
-  { title: 'Echo Creator Pack', tag: 'Social Kit' },
-  { title: 'Forward Ops', tag: 'Identity' }
+  }
 ]
 
 export default function Portfolio() {
@@ -28,7 +24,7 @@ export default function Portfolio() {
           <h2 id="portfolio-title" className="text-2xl sm:text-3xl font-semibold tracking-tight">Portfolio</h2>
           <p className="text-sm text-white/70 max-w-xl">Hover-tilt previews. Case studies coming soon.</p>
         </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 gap-8">
           {items.map((item, index) => (
             <TiltCard key={item.title} index={index} {...item} />
           ))}
@@ -61,7 +57,7 @@ function TiltCard({ title, tag, index, image, alt }) {
         ref={ref}
         onMouseMove={onMove}
         onMouseLeave={onLeave}
-        className="tilt relative h-48 rounded-xl glass border border-glass p-4 transition-transform duration-150 will-change-transform"
+        className="tilt relative h-64 sm:h-72 rounded-xl glass border border-glass p-4 transition-transform duration-150 will-change-transform"
         role={image ? undefined : 'img'}
         aria-label={image ? undefined : `${title} mockup`}
       >
