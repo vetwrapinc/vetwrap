@@ -119,7 +119,7 @@ export default function Portal() {
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">VetWraps Command Center</p>
             <h1 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">Unified login for admins, employees, and clients</h1>
             <p className="mt-3 text-white/70 text-sm sm:text-base">
-              Manage engagements, collaborate with your VetWraps team, and deliver premium pet-care experiences—all from one encrypted hub.
+              Manage engagements, collaborate with your VetWraps team, and deliver premium digital design experiences—all from one encrypted hub.
             </p>
           </header>
 
@@ -275,12 +275,12 @@ function AdminDashboard({ assignments, onAssign, onLogout }) {
     const client = CLIENT_ACCOUNTS.find((item) => item.id === selectedClient)
     const employee = EMPLOYEE_ACCOUNTS.find((item) => item.id === selectedEmployee)
     if (!client || !employee) return
-    const summary = `${employee.name} will lead ${client.name}'s program with a focus on ${employee.focus}`
+    const summary = `${employee.name} will lead ${client.name}'s digital design program with a focus on ${employee.focus}`
     const draft = generateEmailDraft({
       tone,
       senderName: employee.name,
       recipientName: client.name,
-      serviceFocus: client.petFocus || employee.focus,
+      serviceFocus: client.projectFocus || employee.focus,
       assignmentSummary: summary,
       nextMilestone: 'a kickoff sync next week',
       additionalNotes: notes
@@ -303,7 +303,7 @@ function AdminDashboard({ assignments, onAssign, onLogout }) {
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Admin control room</h2>
-          <p className="text-sm text-white/60">Assign clients to your specialists and craft polished emails instantly.</p>
+          <p className="text-sm text-white/60">Assign clients to your design specialists and craft polished emails instantly.</p>
         </div>
         <button onClick={onLogout} className="text-sm text-white/70 hover:text-white focus:outline-none focus:underline">Log out</button>
       </header>
@@ -407,7 +407,7 @@ function AdminDashboard({ assignments, onAssign, onLogout }) {
                       <p className="font-medium text-white">{client.name}</p>
                       <p className="text-white/60">{client.organization}</p>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.2em] text-white/40">{client.petFocus}</span>
+                    <span className="text-xs uppercase tracking-[0.2em] text-white/40">{client.projectFocus}</span>
                   </li>
                 ))}
               </ul>
@@ -443,8 +443,8 @@ function EmployeeDashboard({ assignments, employee, onLogout }) {
       tone,
       senderName: employee.name,
       recipientName: client.name,
-      serviceFocus: client.petFocus,
-      assignmentSummary: `I’ll be your point-person for ${client.petFocus.toLowerCase()}`,
+      serviceFocus: client.projectFocus,
+      assignmentSummary: `I’ll be your point-person for ${client.projectFocus.toLowerCase()} across our digital design initiative`,
       nextMilestone: 'our first performance review call',
       additionalNotes: notes
     })
@@ -521,7 +521,7 @@ function EmployeeDashboard({ assignments, employee, onLogout }) {
                 <p className="font-medium text-white">{client.name}</p>
                 <p className="text-white/60">{client.organization}</p>
               </div>
-              <span className="text-xs uppercase tracking-[0.2em] text-white/50">{client.petFocus}</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-white/50">{client.projectFocus}</span>
             </li>
           ))}
           {clients.length === 0 && <li>No clients assigned yet.</li>}
@@ -540,7 +540,7 @@ function ClientDashboard({ assignments, client, onLogout }) {
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold">Welcome, {client.name}</h2>
-          <p className="text-sm text-white/60">This hub keeps your partnership with VetWraps transparent and proactive.</p>
+          <p className="text-sm text-white/60">This hub keeps your digital design partnership with VetWraps transparent and proactive.</p>
         </div>
         <button onClick={onLogout} className="text-sm text-white/70 hover:text-white focus:outline-none focus:underline">Log out</button>
       </header>
@@ -554,7 +554,7 @@ function ClientDashboard({ assignments, client, onLogout }) {
               <p className="text-sm text-white/60">{employee.title}</p>
             </div>
             <div className="text-sm text-white/60">
-              <p className="uppercase tracking-[0.25em] text-xs text-white/40">Focus</p>
+              <p className="uppercase tracking-[0.25em] text-xs text-white/40">Design focus</p>
               <p>{employee.focus}</p>
             </div>
           </div>
@@ -569,7 +569,7 @@ function ClientDashboard({ assignments, client, onLogout }) {
           Email <a href={`mailto:${employee?.email || 'operations@vetwraps.com'}`} className="text-accent-blue hover:underline">{employee?.email || 'operations@vetwraps.com'}</a> for a priority response.
         </p>
         <p className="mt-3 text-sm text-white/60">
-          Your program focus: <span className="text-white">{client.petFocus}</span>
+          Your engagement focus: <span className="text-white">{client.projectFocus}</span>
         </p>
         <p className="mt-6 text-xs uppercase tracking-[0.3em] text-white/40">Upcoming milestones</p>
         <ul className="mt-3 space-y-2 text-sm text-white/70 list-disc list-inside">
@@ -675,11 +675,11 @@ function tabTitle(role) {
 function tabDescription(role) {
   switch (role) {
     case 'admin':
-      return 'Sign in to orchestrate client assignments, review team load, and broadcast the next sprint.'
+      return 'Sign in to orchestrate client assignments, review team load, and broadcast the next creative sprint.'
     case 'employee':
-      return 'Access playbooks, see assigned practices, and send curated updates in a click.'
+      return 'Access creative playbooks, review assigned accounts, and send curated updates in a click.'
     case 'client':
-      return 'Check who is on your VetWraps squad, track milestones, and stay in sync.'
+      return 'Check who is on your VetWraps digital design squad, track milestones, and stay in sync.'
     default:
       return ''
   }

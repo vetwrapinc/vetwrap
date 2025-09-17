@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 
 const cases = [
   { slug: 'precision-esports', title: 'Precision Esports', summary: 'Identity and motion system' },

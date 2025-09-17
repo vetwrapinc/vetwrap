@@ -24,8 +24,8 @@ export function generateEmailDraft({
 }) {
   const template = TONE_TEMPLATES[tone] || TONE_TEMPLATES.warm
   const safeRecipient = recipientName || 'there'
-  const safeSender = senderName || 'The VetWraps Team'
-  const focusLine = serviceFocus ? `We’re concentrating on ${serviceFocus.toLowerCase()} to keep your experience seamless.` : ''
+  const safeSender = senderName || 'The VetWraps Digital Design Team'
+  const focusLine = serviceFocus ? `We’re concentrating on ${serviceFocus.toLowerCase()} to keep your brand experience seamless.` : ''
   const summaryLine = assignmentSummary ? `${assignmentSummary.trim().replace(/\.$/, '')}.` : ''
   const milestoneLine = nextMilestone ? `Our next milestone is ${nextMilestone}.` : ''
   const notesLine = additionalNotes ? `Here’s a quick custom note from the team: ${additionalNotes.trim()}` : ''
@@ -45,7 +45,7 @@ export function generateEmailDraft({
     .join('\n')
 
   const subjectFocus = serviceFocus ? serviceFocus : 'Account Update'
-  const subject = `${subjectFocus} • VetWraps Support`
+  const subject = `${subjectFocus} • VetWraps Digital Design`
 
   return { subject, body }
 }
