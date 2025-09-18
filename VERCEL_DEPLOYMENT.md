@@ -106,15 +106,15 @@ Before deploying, you'll need accounts for:
    ```env
    # Database
    SUPABASE_URL=your_supabase_url
-   SUPABASE_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+    SUPABASE_KEY=your_supabase_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
    # OpenAI
-   OPENAI_API_KEY=your_openai_api_key
+    OPENAI_API_KEY=your_openai_api_key
 
    # Clerk Auth
-   CLERK_SECRET_KEY=your_clerk_secret_key
-   CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+    CLERK_SECRET_KEY=your_clerk_secret_key
+    CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 
    # Stripe (Optional)
    STRIPE_SECRET_KEY=your_stripe_secret_key
