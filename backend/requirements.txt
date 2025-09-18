@@ -1,0 +1,9 @@
+fastapi>=0.111
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+openai>=1.50
+supabase>=2.4
+PyJWT>=2.8
+python-dotenv>=1.0
+requests>=2.32

@@ -1,65 +1,100 @@
-VetWraps — Mission-Ready Design
-================================
+VetWraps Studios Platform
+=========================
 
-Veteran-owned digital design studio website. Stack: React + Vite + Tailwind, icons via Lucide, animations via Framer Motion. Deploy-ready on Netlify.
+A role-based SaaS platform for VetWraps Studios that unifies admin, employee, and client experiences. The stack pairs a FastAPI backend with a React + Tailwind + shadcn/ui frontend, Clerk.dev for authentication, Supabase for persistent data, and GPT-4 agents for AI workflows.
 
-Quick Start
-----------
-- cd vetwraps
-- npm install
-- npm run dev
-
-Build & Deploy
---------------
-- npm run build (outputs to `dist/`)
-- Netlify config included in `netlify.toml`
-
-Environment Vars (optional)
----------------------------
-- VITE_GA_ID: Google Analytics ID (e.g., G-XXXXXXX)
-- VITE_PLAUSIBLE_DOMAIN: domain for Plausible (e.g., vetwraps.com)
-- VITE_AVG_TURNAROUND: overrides status widget (e.g., `3–5 days`)
-- VITE_RECAPTCHA_SITE_KEY: enables client-side reCAPTCHA widget (backend verification not yet implemented)
-
-Features
---------
-- Apple-level minimalism in dark mode (#0A0A0F), white text, accent blues/orange
-- Glassmorphic cards, glowing hovers, orbital gradients, schematic vectors
-- Sections: Hero, Services, Why Us, Portfolio (hover-tilt), Pricing, Testimonials, Trust, Contact (quote form)
-- Business add-ons: status widget, What’s New?, Case Studies, hidden /subscribers dashboard
-- Accessibility: WCAG AA contrast, ARIA, skip link, keyboard focus
-- SEO: meta + OpenGraph, robots.txt (noindex for /subscribers)
-- Performance: preconnect fonts, lazy UI, optimized SVGs
-- Security: honeypot spam protection; optional reCAPTCHA; security headers via Netlify
-
-Backend Hookup (later)
-----------------------
-- Quote form POSTs to `/api/quote` (Netlify Function). Server validates inputs, verifies reCAPTCHA when configured, optionally emails and persists to DB.
-
-Serverless Functions
---------------------
-- `netlify/functions/quote.js`: Accepts quote submissions.
-  - Env: `RECAPTCHA_SECRET` (Google), `EMAIL_PROVIDER` (`resend` or `sendgrid`), `RESEND_API_KEY` or `SENDGRID_API_KEY`, `QUOTE_INBOX`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE`, `SUPABASE_TABLE` (default `quotes`), `QUOTE_WEBHOOK_URL` (Slack/Discord).
-- `netlify/functions/quotes-list.js`: Lists recent quotes for admins.
-  - Requires Netlify Identity auth and email in `ADMIN_EMAILS` (comma-separated).
-
-Supabase
---------
-- Create the `quotes` table using `db/schema.sql`.
-- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE` in Netlify env.
-
-Netlify Identity
-----------------
-- Site settings → Identity → Enable. Invite your admin email(s).
-- Set `ADMIN_EMAILS` env with allowed addresses (comma-separated).
-- `/subscribers` route is gated; it lists quotes via `/api/quotes-list` when authenticated.
-
-Sitemap
--------
-- `scripts/generate-sitemap.mjs` runs after `vite build`; set `SITE_URL` env for correct canonical host.
-
-Structure
+Tech Stack
 ---------
-- src/components: UI sections and widgets
-- src/routes: internal pages (/subscribers, case studies, updates)
-- public: og-cover.svg, robots.txt
+- **Frontend:** Vite + React + TypeScript, TailwindCSS, shadcn/ui patterns, React Router
+- **Auth:** Clerk.dev multi-role sessions surfaced in the browser
+- **Backend:** FastAPI with modular routers, OpenAI integrations, Supabase data access
+- **AI:** GPT-4 via the official OpenAI client with typed Pydantic responses
+- **Storage & Data:** Supabase (PostgreSQL + Storage) with extendable service layer
+- **Payments & Email (planned):** Stripe for billing, Resend/SendGrid for transactional email
+- **Hosting targets:** Vercel (frontend), Railway or Fly.io (backend)
+
+Directory Structure
+-------------------
+```
+backend/
+  app/
+    agents/           # GPT wrappers
+    core/             # settings, auth utilities, dependencies
+    routes/           # FastAPI routers for auth, AI, projects
+    schemas/          # Pydantic models shared across routes
+    services/         # Supabase service layer
+  requirements.txt    # Backend dependencies
+src/
+  components/         # Common layout + shadcn-inspired UI primitives
+  lib/                # API helpers, auth utilities, shared helpers
+  pages/              # Role dashboards (admin, employee, client, portal)
+  types/              # Shared TypeScript interfaces
+```
+
+Getting Started
+---------------
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+2. **Configure environment variables**
+   - Frontend (`.env`):
+     - `VITE_CLERK_PUBLISHABLE_KEY`
+     - `VITE_API_BASE_URL` (e.g. `http://localhost:8000/api`)
+   - Backend (`backend/.env`):
+     - `OPENAI_API_KEY`
+     - `OPENAI_MODEL` (defaults to `gpt-4o-mini`)
+     - `CLERK_JWKS_URL`, `CLERK_AUDIENCE`, `CLERK_ISSUER`
+     - `SUPABASE_URL`, `SUPABASE_KEY`
+3. **Run the backend**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8000
+   ```
+4. **Run the frontend**
+   ```bash
+   npm run dev
+   ```
+
+Dashboards & Features
+---------------------
+### Admin (`/admin`)
+- Pipeline analytics, timeline, file version history (Supabase powered)
+- AI email writer (GPT-4) for client updates and proposals
+- User management scaffolding for invitations, suspensions, and tier control
+
+### Employee (`/employee`)
+- AI assistant prompts for ideation and feedback clarification
+- GPT-generated task summaries and standup notes
+- Bug reporter and Kanban scaffolding ready for Supabase/PM integrations
+
+### Client (`/client`)
+- GPT-powered revision translator for clearer briefs
+- Quote viewer, project tracker, secure file delivery placeholders
+- Chatbot concierge entry point for GPT-led support
+
+### Portal (`/portal`)
+- Central landing experience for all Clerk-authenticated users with role aware navigation
+
+APIs
+----
+- `POST /api/ai/admin/email-draft` – Drafts structured client emails (admin only)
+- `POST /api/ai/employee/task-summary` – Generates daily standup summaries (admin + employee)
+- `POST /api/ai/client/revision-brief` – Clarifies revision feedback (admin + client)
+- `GET /api/projects/overview` – Supabase-backed analytics for admins/employees
+- `GET /api/auth/me` – Clerk token validation with role metadata
+
+Deployment Notes
+----------------
+- Provision Clerk applications for production and staging; configure allowed redirect URLs.
+- Deploy the frontend to Vercel with the Vite adapter and required environment variables.
+- Deploy the FastAPI service to Railway/Fly.io using the `backend/requirements.txt` and expose port `8000`.
+- Ensure Supabase policies restrict access per role and integrate Stripe/Resend credentials before enabling billing or email automations.
+
+Next Steps
+----------
+- Wire user management form actions to FastAPI routes that sync Clerk roles and Supabase access.
+- Implement real project, timeline, and file version queries in Supabase.
+- Connect Stripe for milestone billing and Resend/SendGrid for automated notifications.
+- Extend AI routes for quote generation, testimonial drafts, and design ideation.
