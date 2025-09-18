@@ -1,24 +1,32 @@
-﻿import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import ImageModal from './ImageModal'
+import { useDashboard } from '../context/DashboardContext'
 
-const projects = [
-  {
-    title: 'Orbital Brand Theater',
-    tag: 'Mission Collateral',
-    image: '/images/image-1200x794.png',
-    description: 'Immersive rollout kit built for a veteran owned launch. The collage combines apparel, tactical packaging, and modular signage photographed under dramatic rim lighting to emphasize precision craftsmanship.'
-  },
-  {
-    title: 'Precision Interface Suite',
-    tag: 'Interactive Systems',
-    image: '/images/image-1200x800.png',
-    description: 'Next generation product interface mockups with orbital telemetry overlays, adaptive dashboards, and high fidelity UI components rendered for handoff to product teams.'
-  }
-]
+
 
 export default function Portfolio() {
   const [selectedImage, setSelectedImage] = useState(null)
+  const { state } = useDashboard()
+  const projects = useMemo(() => {
+    return state.portfolio.map((item) => {
+      const imageSrc = item.image || '/images/iron-grind-coffee.png'
+      const aspectRatio = item.aspectRatio || 1200 / 800
+      return {
+        id: item.id,
+        title: item.title,
+        tag: item.tag || 'Showcase',
+        image: {
+          src: imageSrc,
+          srcSet: `${imageSrc} 1x, ${imageSrc} 2x`,
+          sizes: '(min-width: 1024px) 540px, 92vw',
+          alt: item.description || item.title,
+          aspectRatio
+        },
+        description: item.description || ''
+      }
+    })
+  }, [state.portfolio])
 
   return (
     <section id="portfolio" aria-labelledby="portfolio-title" className="py-20 sm:py-28">
@@ -41,14 +49,20 @@ export default function Portfolio() {
           </p>
         </motion.div>
         <div className="grid md:grid-cols-2 gap-8">
-          {projects.map((project, index) => (
-            <HologramCard
-              key={project.title}
-              project={project}
-              index={index}
-              onOpen={() => setSelectedImage(project)}
-            />
-          ))}
+          {projects.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-white/20 p-12 text-center text-white/60">
+              Portfolio items will appear once the admin adds them.
+            </div>
+          ) : (
+            projects.map((project, index) => (
+              <HologramCard
+                key={project.id || project.title}
+                project={project}
+                index={index}
+                onOpen={() => setSelectedImage(project)}
+              />
+            ))
+          )}
         </div>
 
         <ImageModal
@@ -101,17 +115,21 @@ function HologramCard({ project, index, onOpen }) {
       <motion.div
         className="relative h-[22rem] rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm cursor-pointer"
         whileHover={{ scale: 1.015 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={onOpen}
       >
         <motion.img
-          src={project.image}
-          alt={project.title}
+          src={project.image.src}
+          srcSet={project.image.srcSet}
+          sizes={project.image.sizes}
+          alt={project.image.alt}
           className="absolute inset-0 w-full h-full object-cover"
+          decoding="async"
           loading="lazy"
+          style={{ aspectRatio: project.image.aspectRatio }}
           initial={{ scale: 1.06 }}
           whileHover={{ scale: 1.12 }}
-          transition={{ duration: 1.4, ease: 'easeOut' }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
         />
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/40"

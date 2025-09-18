@@ -1,18 +1,30 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useDashboard } from '../context/DashboardContext'
 import AIEmailComposer from './components/AIEmailComposer'
-import { BadgeCheck, Coins, AlertCircle } from 'lucide-react'
-
+import { BadgeCheck, Coins, AlertCircle, Upload, FileText, Clock, Image as ImageIcon } from 'lucide-react'
 export default function EmployeePanel() {
   const { user, isSignedIn, isLoaded } = useUser()
   const navigate = useNavigate()
-  const { state, updateQuoteStatus, cashOutEmployee } = useDashboard()
+  const {
+    state,
+    updateQuoteStatus,
+    cashOutEmployee,
+    updateProjectTimeline,
+    upsertProjectPreview,
+    addProjectMessage
+  } = useDashboard()
 
   const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase()
   const employee = state.employees.find((emp) => emp.email.toLowerCase() === email)
+
+  const [progressDrafts, setProgressDrafts] = useState({})
+  const [captionDrafts, setCaptionDrafts] = useState({})
+  const [messageDrafts, setMessageDrafts] = useState({})
+  const [pendingFiles, setPendingFiles] = useState({})
+  const [uploading, setUploading] = useState({})
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -49,6 +61,37 @@ export default function EmployeePanel() {
   }
 
   const assignments = state.quotes.filter((quote) => quote.assignedTo === employee.id)
+
+  useEffect(() => {
+    setProgressDrafts((prev) => {
+      const next = { ...prev }
+      assignments.forEach((quote) => {
+        if (typeof next[quote.id] === 'undefined') {
+          next[quote.id] = quote.progress
+        }
+      })
+      return next
+    })
+    setCaptionDrafts((prev) => {
+      const next = { ...prev }
+      assignments.forEach((quote) => {
+        if (typeof next[quote.id] === 'undefined') {
+          next[quote.id] = ''
+        }
+      })
+      return next
+    })
+    setMessageDrafts((prev) => {
+      const next = { ...prev }
+      assignments.forEach((quote) => {
+        if (typeof next[quote.id] === 'undefined') {
+          next[quote.id] = ''
+        }
+      })
+      return next
+    })
+  }, [assignments])
+
   const walletBalance = employee.balance
   const lifetime = employee.lifetimeEarned
 
@@ -56,6 +99,66 @@ export default function EmployeePanel() {
     updateQuoteStatus({ quoteId, status })
   }
 
+  const handleProgressChange = (quoteId, value) => {
+    setProgressDrafts((prev) => ({ ...prev, [quoteId]: value }))
+  }
+
+  const handleProgressSave = (quote) => {
+    const draftValue = progressDrafts[quote.id]
+    updateProjectTimeline({
+      quoteId: quote.id,
+      changes: {
+        progress: draftValue,
+        stageLabel: quote.stageLabel
+      }
+    })
+  }
+
+  const handleFilePick = (quoteId, file) => {
+    if (!file) return
+    setPendingFiles((prev) => ({ ...prev, [quoteId]: file }))
+  }
+
+  const handlePreviewUpload = async (quote, fileOverride) => {
+    const file = fileOverride || pendingFiles[quote.id]
+    if (!file) return
+    setUploading((prev) => ({ ...prev, [quote.id]: true }))
+    try {
+      const dataUrl = await compressImage(file)
+      const preview = {
+        id: `preview-${Date.now()}`,
+        href: dataUrl,
+        uploadedBy: employee.name,
+        uploadedAt: new Date().toISOString(),
+        caption: captionDrafts[quote.id] || `${quote.projectType} preview`
+      }
+      upsertProjectPreview({ quoteId: quote.id, preview })
+      setCaptionDrafts((prev) => ({ ...prev, [quote.id]: '' }))
+      setPendingFiles((prev) => {
+        const next = { ...prev }
+        delete next[quote.id]
+        return next
+      })
+    } catch (error) {
+      console.warn('Unable to process preview upload', error)
+    } finally {
+      setUploading((prev) => ({ ...prev, [quote.id]: false }))
+    }
+  }
+
+  const handleMessageSend = (quote) => {
+    const body = (messageDrafts[quote.id] || '').trim()
+    if (!body) return
+    addProjectMessage({
+      quoteId: quote.id,
+      message: {
+        authorRole: 'employee',
+        author: employee.name,
+        body
+      }
+    })
+    setMessageDrafts((prev) => ({ ...prev, [quote.id]: '' }))
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-night via-[#101b2b] to-night text-white">
       <header className="border-b border-white/10 backdrop-blur-md bg-night/70">
@@ -89,61 +192,181 @@ export default function EmployeePanel() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">Active Missions</h2>
-              <p className="text-sm text-white/60">Update your status to keep clients in the loop and unlock your commission.</p>
+              <p className="text-sm text-white/60">Update your progress, share previews, and keep the command center in sync.</p>
             </div>
             <span className="text-xs uppercase tracking-[0.3em] text-white/40">{assignments.length} assignments</span>
           </div>
 
           <div className="grid gap-4">
-            {assignments.map((quote) => (
-              <motion.div
-                key={quote.id}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6 grid gap-4 md:grid-cols-[1.5fr_1fr]"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div>
-                  <h3 className="text-xl font-semibold">{quote.projectType}</h3>
-                  <p className="text-sm text-white/60 mt-1">Client: {quote.name}</p>
-                  <p className="text-sm text-white/60">Email: {quote.email}</p>
-                  {quote.notes && <p className="text-sm text-white/55 mt-3 whitespace-pre-wrap">{quote.notes}</p>}
-                  <div className="mt-4 space-y-2">
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-accent-blue to-accent-amber" style={{ width: `${quote.progress}%` }} />
+            {assignments.map((quote) => {
+              const progressDraft = progressDrafts[quote.id] ?? quote.progress
+              const captionDraft = captionDrafts[quote.id] ?? ''
+              const messageDraft = messageDrafts[quote.id] ?? ''
+              const client = state.clients.find((c) => c.activeProjectId === quote.id)
+              const previews = Array.isArray(quote.previews) ? quote.previews.slice(0, 4) : []
+              const pendingFile = pendingFiles[quote.id]
+              const isUploading = Boolean(uploading[quote.id])
+
+              return (
+                <motion.div
+                  key={quote.id}
+                  className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-6"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xl font-semibold">{quote.projectType}</h3>
+                        <p className="text-sm text-white/60">Client: {quote.name}</p>
+                        <p className="text-sm text-white/60">Email: {quote.email}</p>
+                        {quote.notes && <p className="text-sm text-white/55 mt-3 whitespace-pre-wrap">{quote.notes}</p>}
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 text-sm text-white/70">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-accent-blue" />
+                          <span>Logo pref: {client?.logoPreferences || 'Pending briefing'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-accent-blue" />
+                          <span>ETA: {quote.estimatedDelivery ? new Date(quote.estimatedDelivery).toLocaleDateString() : 'TBD'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4 text-accent-blue" />
+                          <span>File status: {quote.fileStatus || 'Pending'}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase tracking-[0.25em] text-white/40">Progress</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={progressDraft}
+                          onChange={(event) => handleProgressChange(quote.id, Number(event.target.value))}
+                          className="w-full"
+                        />
+                        <div className="flex items-center justify-between text-xs text-white/60">
+                          <span>{progressDraft}%</span>
+                          <button
+                            type="button"
+                            onClick={() => handleProgressSave(quote)}
+                            className="rounded-md bg-accent-blue/25 px-3 py-1 text-[10px] uppercase tracking-[0.3em] hover:bg-accent-blue/35"
+                          >
+                            Log progress
+                          </button>
+                        </div>
+                      </div>
+
+                      {previews.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">Shared previews</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {previews.map((preview) => (
+                              <div key={preview.id} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                                <img src={preview.href} alt={preview.caption || 'Preview'} className="h-24 w-full object-cover" />
+                                <div className="absolute inset-x-0 bottom-0 bg-black/50 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70">
+                                  {preview.caption || 'Preview'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-white/50 uppercase tracking-[0.3em]">{quote.progress}% / {quote.stageLabel}</div>
-                  </div>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div className="rounded-2xl bg-white/8 border border-white/10 p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">Commission</p>
-                    <p className="text-2xl font-semibold text-white mt-1">+${quote.commission.toFixed(2)}</p>
-                    <p className="text-xs text-white/50 mt-1">Complete and mark delivered to drop this into your wallet.</p>
-                  </div>
-                  {quote.status === 'assigned' && (
-                    <button
-                      onClick={() => markStatus(quote.id, 'in_progress')}
-                      className="w-full rounded-lg bg-accent-blue/20 px-4 py-2 text-xs uppercase tracking-[0.3em] hover:bg-accent-blue/30"
-                    >
-                      Start mission
-                    </button>
-                  )}
-                  {quote.status === 'in_progress' && (
-                    <button
-                      onClick={() => markStatus(quote.id, 'completed')}
-                      className="w-full rounded-lg bg-emerald-500/20 px-4 py-2 text-xs uppercase tracking-[0.3em] hover:bg-emerald-500/30"
-                    >
-                      Mark delivered
-                    </button>
-                  )}
-                  {quote.status === 'completed' && (
-                    <div className="inline-flex items-center gap-2 text-emerald-300 text-xs uppercase tracking-[0.3em]">
-                      <BadgeCheck className="h-4 w-4" /> Complete
+
+                    <div className="space-y-4 text-sm">
+                      <div className="rounded-2xl bg-white/8 border border-white/10 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Commission</p>
+                        <p className="text-2xl font-semibold text-white mt-1">+${quote.commission.toFixed(2)}</p>
+                        <p className="text-xs text-white/50 mt-1">Complete and mark delivered to drop this into your wallet.</p>
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Upload preview</p>
+                        <input
+                          value={captionDraft}
+                          onChange={(event) => setCaptionDrafts((prev) => ({ ...prev, [quote.id]: event.target.value }))}
+                          placeholder="Caption"
+                          className="w-full rounded-md px-3 py-2 text-sm border border-white/20 bg-white text-night"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex items-center gap-2 rounded-md bg-white/10 border border-white/15 px-3 py-2 text-xs uppercase tracking-[0.3em] cursor-pointer hover:bg-white/15">
+                            <Upload className="h-4 w-4" />
+                            Choose file
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0]
+                                handleFilePick(quote.id, file)
+                                event.target.value = ''
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handlePreviewUpload(quote)}
+                            disabled={isUploading || !pendingFile}
+                            className="flex-1 rounded-md bg-accent-blue/25 px-3 py-2 text-xs uppercase tracking-[0.3em] hover:bg-accent-blue/35 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isUploading ? 'Uploading…' : 'Send preview'}
+                          </button>
+                        </div>
+                        {pendingFile && (
+                          <p className="text-xs text-white/50">Ready: {pendingFile.name}</p>
+                        )}
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Mission message</p>
+                        <textarea
+                          value={messageDraft}
+                          onChange={(event) => setMessageDrafts((prev) => ({ ...prev, [quote.id]: event.target.value }))}
+                          rows={3}
+                          placeholder="Share a status update or request assets"
+                          className="w-full rounded-md px-3 py-2 text-sm border border-white/20 bg-white text-night"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleMessageSend(quote)}
+                          className="w-full rounded-md bg-white/10 px-3 py-2 text-xs uppercase tracking-[0.3em] hover:bg-white/15"
+                        >
+                          Send update
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {quote.status === 'assigned' && (
+                          <button
+                            onClick={() => markStatus(quote.id, 'in_progress')}
+                            className="w-full rounded-lg bg-accent-blue/20 px-4 py-2 text-xs uppercase tracking-[0.3em] hover:bg-accent-blue/30"
+                          >
+                            Start mission
+                          </button>
+                        )}
+                        {quote.status === 'in_progress' && (
+                          <button
+                            onClick={() => markStatus(quote.id, 'completed')}
+                            className="w-full rounded-lg bg-emerald-500/20 px-4 py-2 text-xs uppercase tracking-[0.3em] hover:bg-emerald-500/30"
+                          >
+                            Mark delivered
+                          </button>
+                        )}
+                        {quote.status === 'completed' && (
+                          <div className="inline-flex items-center gap-2 text-emerald-300 text-xs uppercase tracking-[0.3em]">
+                            <BadgeCheck className="h-4 w-4" /> Complete
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  </div>
+                </motion.div>
+              )
+            })}
             {assignments.length === 0 && (
               <div className="rounded-3xl border border-dashed border-white/20 p-12 text-center text-white/50">
                 No missions assigned yet. Your admin will route a brief here when the next project launches.
@@ -167,7 +390,6 @@ export default function EmployeePanel() {
     </div>
   )
 }
-
 function PanelLoading({ label = 'Loading' }) {
   return (
     <div className="min-h-screen bg-night text-white flex items-center justify-center px-6">
@@ -211,31 +433,47 @@ function WalletCard({ balance, lifetime, onCashOut }) {
 }
 
 function MissionSummary({ assignments }) {
-  const counts = assignments.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1
-    return acc
-  }, {})
+  const stages = ['new', 'assigned', 'in_progress', 'completed']
+  const counts = stages.map((stage) => assignments.filter((quote) => quote.status === stage).length)
   return (
     <motion.div
-      className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-4"
+      className="rounded-3xl border border-white/10 bg-white/5 p-6"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-semibold">Mission status</h3>
-      <div className="grid grid-cols-3 gap-3 text-center text-sm">
-        <div className="rounded-xl bg-white/10 border border-white/10 p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Assigned</p>
-          <p className="text-2xl font-semibold">{counts.assigned || 0}</p>
-        </div>
-        <div className="rounded-xl bg-white/10 border border-white/10 p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Progress</p>
-          <p className="text-2xl font-semibold">{counts.in_progress || 0}</p>
-        </div>
-        <div className="rounded-xl bg-white/10 border border-white/10 p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Complete</p>
-          <p className="text-2xl font-semibold">{counts.completed || 0}</p>
-        </div>
+      <p className="text-xs uppercase tracking-[0.3em] text-white/50">Mission distribution</p>
+      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        {stages.map((stage, index) => (
+          <div key={stage} className="rounded-xl bg-white/8 border border-white/10 p-4">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">{stage.replace('_', ' ')}</p>
+            <p className="text-xl font-semibold text-white mt-2">{counts[index]}</p>
+          </div>
+        ))}
       </div>
     </motion.div>
   )
+}
+
+async function compressImage(file, maxWidth = 1280) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const scale = maxWidth / img.width
+        const width = Math.min(maxWidth, img.width)
+        const height = img.width > maxWidth ? img.height * scale : img.height
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.onerror = () => reject(new Error('Image load failed'))
+      img.src = reader.result
+    }
+    reader.onerror = () => reject(new Error('File read failed'))
+    reader.readAsDataURL(file)
+  })
 }

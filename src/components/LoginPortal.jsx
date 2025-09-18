@@ -54,7 +54,7 @@ export default function LoginPortal({ onClose, onLoginSuccess }) {
   const derivedStats = computeStats(role, state, user)
 
   const goToDashboard = () => {
-    navigate(`/${role}`)
+    navigate(`/dashboard/${role}`)
     onClose()
   }
 

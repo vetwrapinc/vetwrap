@@ -246,3 +246,7 @@ select, .dropdown-field {
 select option {
   color: #0f172a;
 }
+
+.page-transition {
+  will-change: opacity, transform, filter;
+}

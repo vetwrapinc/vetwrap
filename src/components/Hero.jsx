@@ -3,13 +3,13 @@ import { motion } from 'framer-motion'
 
 const collageImages = [
   {
-    src: '/images/image-1200x794.png',
-    alt: 'Orbital brand theater collage',
+    src: '/images/iron-grind-coffee.png',
+    alt: 'Iron Grind Coffee brand collateral arranged in a flat lay',
     className: 'shadow-[0_20px_40px_rgba(10,10,18,0.55)]'
   },
   {
-    src: '/images/image-1200x800.png',
-    alt: 'Precision interface suite collage',
+    src: '/images/sentinel-1200x800.png',
+    alt: 'Sentinel surveillance dashboards layered across rugged monitors',
     className: 'shadow-[0_14px_28px_rgba(12,18,30,0.45)]'
   }
 ]
@@ -40,9 +40,8 @@ export default function Hero() {
                 </span>
                 <motion.span
                   className="inline-flex rounded-full px-4 py-1 font-dmserif text-transparent bg-clip-text hero-gradient-text"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0, backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'], letterSpacing: ['0.02em', '0.08em', '0.02em'] }}
-                  transition={{ duration: 6, delay: 0.4, repeat: Infinity, ease: 'easeInOut' }}
+                  animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                  transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
                 >
                   Veteran Precision.
                 </motion.span>

@@ -1,7 +1,9 @@
-﻿import React from 'react'
+import React from 'react'
+import { useDashboard } from '../context/DashboardContext'
 
 export default function StatusWidget({ className = '' }) {
-  const avg = import.meta.env.VITE_AVG_TURNAROUND || '5-10 days'
+  const { state } = useDashboard()
+  const avg = state.averageTurnaround || import.meta?.env?.VITE_AVG_TURNAROUND || '5-10 days'
 
   return (
     <div className={`${className} w-full`}>

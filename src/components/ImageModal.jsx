@@ -2,6 +2,12 @@ import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ImageModal = ({ isOpen, onClose, image, title, description }) => {
+  const resolvedImage = typeof image === 'string' || !image ? {
+    src: image || '',
+    alt: title,
+    srcSet: undefined,
+    sizes: undefined
+  } : image;
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -59,9 +65,9 @@ const ImageModal = ({ isOpen, onClose, image, title, description }) => {
           >
             <div className="relative">
               <motion.img
-                src={image}
-                alt={title}
-                className="w-full h-auto max-h-[70vh] object-cover"
+                src={resolvedImage.src}
+                alt={resolvedImage.alt || title}
+                className="w-full h-auto max-h-[70vh] object-cover" srcSet={resolvedImage.srcSet} sizes={resolvedImage.sizes} decoding="async" loading="lazy"
                 initial={{ scale: 1.02 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.6 }}

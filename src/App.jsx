@@ -1,6 +1,5 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { ClerkProvider } from '@clerk/clerk-react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Services from './components/Services'
@@ -55,16 +54,5 @@ const AppShell = () => {
 }
 
 export default function App() {
-  const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-
-  if (!clerkPubKey) {
-    console.warn('Clerk publishable key not found. Please add VITE_CLERK_PUBLISHABLE_KEY to your environment variables.')
-    return <AppShell />
-  }
-
-  return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <AppShell />
-    </ClerkProvider>
-  )
+  return <AppShell />
 }

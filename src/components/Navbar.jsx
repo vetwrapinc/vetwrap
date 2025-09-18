@@ -78,8 +78,8 @@ export default function Navbar({ onLoginClick }) {
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" aria-label="Primary">
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Link to="/" className="flex items-center gap-3 focusable" aria-label="VetWraps home">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-accent-blue via-white/35 to-accent-amber border border-white/30 shadow-[0_8px_24px_rgba(20,20,35,0.35)] overflow-hidden">
-              <span className="text-night font-semibold text-lg tracking-[0.18em]">VP</span>
+            <div className="h-10 w-10 rounded-2xl overflow-hidden border border-white/20 bg-white flex items-center justify-center p-1.5 shadow-[0_8px_24px_rgba(20,20,35,0.25)]">
+              <img src="/images/vetwrap-icon-black.png" alt="VetWraps icon" className="h-full w-full object-contain" />
             </div>
             <span className="text-sm tracking-[0.35em] uppercase text-white/90 font-semibold">VetWraps</span>
           </Link>
@@ -90,7 +90,7 @@ export default function Navbar({ onLoginClick }) {
             <>
               <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45 }}>
                 <Link
-                  to={`/${userRole}`}
+                  to={`/dashboard/${userRole}`}
                   state={{ from: location.pathname + location.hash }}
                   className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
                 >
@@ -118,7 +118,7 @@ export default function Navbar({ onLoginClick }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.45 }}
             >
-              Log In
+              Open Portal
             </motion.button>
           ) : null}
           <motion.button
@@ -164,7 +164,7 @@ export default function Navbar({ onLoginClick }) {
               {showDashboardLink ? (
                 <>
                   <Link
-                    to={`/${userRole}`}
+                    to={`/dashboard/${userRole}`}
                     state={{ from: location.pathname + location.hash }}
                     className="block px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
                     onClick={() => {
@@ -192,7 +192,7 @@ export default function Navbar({ onLoginClick }) {
                   onClick={handleMobileLogin}
                   className="w-full text-left px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
                 >
-                  Log In
+                  Open Portal
                 </button>
               ) : (
                 <span className="block px-3 py-2 text-sm text-black/60">Loading</span>

@@ -3,7 +3,7 @@ import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDashboard } from '../context/DashboardContext'
-import { Clock, AlertCircle, Sparkles, CalendarCheck, Compass, Target } from 'lucide-react'
+import { Clock, AlertCircle, Sparkles, CalendarCheck, Compass, Target, Download } from 'lucide-react'
 
 const stageNarratives = {
   new: 'We received your brief and the admin team is preparing the mission outline.',
@@ -12,14 +12,29 @@ const stageNarratives = {
   completed: 'Final deliverables approved. Files are archived and ready to deploy.'
 }
 
+const messageTypes = [
+  { value: 'update', label: 'Progress update' },
+  { value: 'revision', label: 'Revision request' },
+  { value: 'question', label: 'Clarifying question' }
+]
+
+const messageTypeLabel = {
+  update: 'Progress update',
+  revision: 'Revision request',
+  question: 'Clarifying question'
+}
+
 export default function ClientPanel() {
   const { user, isSignedIn, isLoaded } = useUser()
   const navigate = useNavigate()
-  const { state } = useDashboard()
+  const { state, addProjectMessage } = useDashboard()
 
   const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase()
   const projects = state.quotes.filter((quote) => quote.email.toLowerCase() === email)
   const [activeProjectId, setActiveProjectId] = React.useState(projects[0]?.id ?? null)
+  const [messageDrafts, setMessageDrafts] = React.useState({})
+  const [messageTypeDrafts, setMessageTypeDrafts] = React.useState({})
+  const [dispatchFeedback, setDispatchFeedback] = React.useState('')
 
   React.useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -32,6 +47,33 @@ export default function ClientPanel() {
       setActiveProjectId(projects[0].id)
     }
   }, [projects, activeProjectId])
+
+  React.useEffect(() => {
+    setMessageDrafts((prev) => {
+      const next = { ...prev }
+      projects.forEach((project) => {
+        if (typeof next[project.id] === 'undefined') {
+          next[project.id] = ''
+        }
+      })
+      return next
+    })
+    setMessageTypeDrafts((prev) => {
+      const next = { ...prev }
+      projects.forEach((project) => {
+        if (typeof next[project.id] === 'undefined') {
+          next[project.id] = 'update'
+        }
+      })
+      return next
+    })
+  }, [projects])
+
+  React.useEffect(() => {
+    if (!dispatchFeedback) return
+    const id = window.setTimeout(() => setDispatchFeedback(''), 3200)
+    return () => window.clearTimeout(id)
+  }, [dispatchFeedback])
 
   if (!isLoaded) {
     return <PanelLoading label="Preparing client view" />
@@ -62,6 +104,41 @@ export default function ClientPanel() {
   }
 
   const activeProject = projects.find((project) => project.id === activeProjectId) || projects[0]
+  const activeMessageDraft = activeProject ? messageDrafts[activeProject.id] || '' : ''
+  const activeMessageType = activeProject ? messageTypeDrafts[activeProject.id] || 'update' : 'update'
+  const activeMessages = activeProject ? activeProject.messages || [] : []
+  const primaryEmail = user?.primaryEmailAddress?.emailAddress || ''
+  const authorName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.fullName || primaryEmail || 'Client'
+
+  const handleMessageDraftChange = (projectId, value) => {
+    setMessageDrafts((prev) => ({ ...prev, [projectId]: value }))
+  }
+
+  const handleMessageTypeChange = (projectId, value) => {
+    setMessageTypeDrafts((prev) => ({ ...prev, [projectId]: value }))
+  }
+
+  const handleDispatch = (event) => {
+    event.preventDefault()
+    if (!activeProject) return
+    const rawBody = (messageDrafts[activeProject.id] || '').trim()
+    if (!rawBody) return
+    const dispatchType = messageTypeDrafts[activeProject.id] || 'update'
+    const prefix = dispatchType === 'revision' ? '[Revision request]' : dispatchType === 'question' ? '[Question]' : '[Client update]'
+    const body = `${prefix} ${rawBody}`
+    addProjectMessage({
+      quoteId: activeProject.id,
+      message: {
+        body,
+        type: dispatchType,
+        authorRole: 'client',
+        author: authorName,
+        authorEmail: primaryEmail
+      }
+    })
+    setMessageDrafts((prev) => ({ ...prev, [activeProject.id]: '' }))
+    setDispatchFeedback('Transmission sent to VetWraps command.')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-night via-[#0f1828] to-night text-white">
@@ -94,6 +171,9 @@ export default function ClientPanel() {
                   <div>
                     <h2 className="text-2xl font-semibold">{project.projectType}</h2>
                     <p className="text-sm text-white/60">Filed on {new Date(project.createdAt).toLocaleDateString()}</p>
+                    {project.estimatedDelivery && (
+                      <p className="text-xs text-white/50 mt-1">ETA {new Date(project.estimatedDelivery).toLocaleDateString()}</p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-2 text-xs uppercase tracking-[0.25em] text-white/50">
                     <span>Current stage: {project.stageLabel}</span>
@@ -195,6 +275,105 @@ export default function ClientPanel() {
                   ))}
                 </motion.ul>
               </div>
+              {activeProject.finalAssets?.length ? (
+                <motion.div
+                  className="rounded-2xl border border-white/10 bg-night/70 p-5 space-y-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/50">Approved assets</p>
+                  <ul className="space-y-2">
+                    {activeProject.finalAssets.map((asset) => (
+                      <li key={asset.id} className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/80">
+                        <a
+                          href={asset.href}
+                          className="inline-flex items-center gap-2 text-accent-blue hover:text-white transition"
+                          download
+                        >
+                          <Download className="h-4 w-4" /> {asset.label || 'Download asset'}
+                        </a>
+                        <span className="text-xs text-white/40">{asset.size ? asset.size : ''}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ) : (
+                <motion.div
+                  className="rounded-2xl border border-white/10 bg-night/60 p-5 text-sm text-white/60"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  Final files unlock here once the team publishes them. We will notify you the moment they are ready.
+                </motion.div>
+              )}
+              <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+                <motion.form
+                  onSubmit={handleDispatch}
+                  className="rounded-2xl border border-white/10 bg-night/70 p-5 space-y-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">Send a mission note</p>
+                    <span className="text-[11px] uppercase tracking-[0.3em] text-white/40">Response within 24 hrs</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {messageTypes.map((option) => {
+                      const selected = option.value === activeMessageType
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleMessageTypeChange(activeProject.id, option.value)}
+                          className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.3em] transition ${selected ? 'border-accent-blue/80 bg-accent-blue/20 text-white' : 'border-white/15 text-white/60 hover:text-white'}`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <textarea
+                    value={activeMessageDraft}
+                    onChange={(event) => handleMessageDraftChange(activeProject.id, event.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-accent-blue/60"
+                    rows={4}
+                    placeholder="Share progress feedback, request tweaks, or ask for clarifications."
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent-blue/30 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white hover:bg-accent-blue/40 transition"
+                    >
+                      Dispatch to team
+                    </button>
+                    <span className="text-xs text-white/50">Sending as {primaryEmail}</span>
+                  </div>
+                  {dispatchFeedback && <p className="text-xs text-accent-blue">{dispatchFeedback}</p>}
+                </motion.form>
+                <motion.div
+                  className="rounded-2xl border border-white/10 bg-night/70 p-5 space-y-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/50">Conversation log</p>
+                  {activeMessages.length ? (
+                    <ul className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                      {activeMessages.map((message) => (
+                        <li key={message.id} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80 space-y-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <span className="text-xs uppercase tracking-[0.3em] text-white/50">{messageTypeLabel[message.type] || 'Progress update'}</span>
+                            <span className="text-xs text-white/40">{new Date(message.timestamp).toLocaleString()}</span>
+                          </div>
+                          <p>{message.body}</p>
+                          {message.author && <p className="text-xs text-white/50">Sent by {message.author}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-sm text-white/60">No direct messages yet. Use the form to start the conversation.</div>
+                  )}
+                </motion.div>
+              </div>
             </motion.section>
           )}
         </AnimatePresence>
@@ -293,3 +472,4 @@ function getEmployeeName(state, employeeId) {
   const employee = state.employees.find((emp) => emp.id === employeeId)
   return employee ? employee.name : 'Pending assignment'
 }
+
