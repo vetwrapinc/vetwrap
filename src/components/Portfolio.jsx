@@ -1,19 +1,19 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+﻿import React, { useState, useRef } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import ImageModal from './ImageModal'
 
-const items = [
-  { 
-    title: 'Iron Grind Coffee', 
-    tag: 'Brand Identity',
-    image: '/images/iron-grind-coffee.jpg',
-    description: 'Complete branding system for a premium coffee shop featuring minimalist design with black and off-white color palette, including disposable cups, wall signage, and menu design.'
+const projects = [
+  {
+    title: 'Orbital Brand Theater',
+    tag: 'Mission Collateral',
+    image: '/images/image-1200x794.png',
+    description: 'Immersive rollout kit built for a veteran owned launch. The collage combines apparel, tactical packaging, and modular signage photographed under dramatic rim lighting to emphasize precision craftsmanship.'
   },
-  { 
-    title: 'Sentinel Home Systems', 
-    tag: 'Tech Branding',
-    image: '/images/sentinel-home-systems.jpg',
-    description: 'Futuristic branding for a smart home security company with dark, tech-themed design featuring circuit board aesthetics and modern security product visualization.'
+  {
+    title: 'Precision Interface Suite',
+    tag: 'Interactive Systems',
+    image: '/images/image-1200x800.png',
+    description: 'Next generation product interface mockups with orbital telemetry overlays, adaptive dashboards, and high fidelity UI components rendered for handoff to product teams.'
   }
 ]
 
@@ -23,35 +23,36 @@ export default function Portfolio() {
   return (
     <section id="portfolio" aria-labelledby="portfolio-title" className="py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div 
-          className="flex items-end justify-between gap-6 mb-10"
-          initial={{ opacity: 0, y: 20 }}
+        <motion.div
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12"
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true, amount: 0.5 }}
         >
-          <h2 id="portfolio-title" className="text-2xl sm:text-3xl font-semibold tracking-tight">Portfolio</h2>
-          <p className="text-sm text-white/70 max-w-xl">Click on any project to view details and see our capabilities.</p>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-white/60">Live Operations</p>
+            <h2 id="portfolio-title" className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
+              Portfolio Signals
+            </h2>
+          </div>
+          <p className="text-sm text-white/70 max-w-xl">
+            Swipe through the collaged mission boards. Every tile reveals layered lighting passes, orbital glyphs, and hand tuned textures captured from our production floor.
+          </p>
         </motion.div>
-        <motion.div 
-          className="grid sm:grid-cols-2 gap-8"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          {items.map((item, index) => (
-            <TiltCard 
-              key={item.title} 
-              {...item} 
+        <div className="grid md:grid-cols-2 gap-8">
+          {projects.map((project, index) => (
+            <HologramCard
+              key={project.title}
+              project={project}
               index={index}
-              onClick={() => setSelectedImage(item)}
+              onOpen={() => setSelectedImage(project)}
             />
           ))}
-        </motion.div>
-        
+        </div>
+
         <ImageModal
-          isOpen={!!selectedImage}
+          isOpen={Boolean(selectedImage)}
           onClose={() => setSelectedImage(null)}
           image={selectedImage?.image}
           title={selectedImage?.title}
@@ -62,102 +63,111 @@ export default function Portfolio() {
   )
 }
 
-function TiltCard({ title, tag, image, description, index, onClick }) {
-  const ref = React.useRef(null)
-  
-  function onMove(e) {
-    const el = ref.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const px = x / rect.width - 0.5
-    const py = y / rect.height - 0.5
-    el.style.transform = `rotateX(${(-py * 4).toFixed(2)}deg) rotateY(${(px * 4).toFixed(2)}deg)`
+function HologramCard({ project, index, onOpen }) {
+  const cardRef = useRef(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const rotateX = useSpring(useTransform(y, [-50, 50], [15, -15]), { stiffness: 200, damping: 20 })
+  const rotateY = useSpring(useTransform(x, [-50, 50], [-15, 15]), { stiffness: 200, damping: 20 })
+  const glare = useSpring(useTransform(x, [-60, 60], [0, 1]), { stiffness: 120, damping: 18 })
+
+  const handleMove = (event) => {
+    const element = cardRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const offsetX = event.clientX - rect.left - rect.width / 2
+    const offsetY = event.clientY - rect.top - rect.height / 2
+    x.set(offsetX)
+    y.set(offsetY)
   }
-  
-  function onLeave() {
-    const el = ref.current
-    if (!el) return
-    el.style.transform = 'rotateX(0) rotateY(0)'
+
+  const handleLeave = () => {
+    x.set(0)
+    y.set(0)
   }
-  
+
   return (
-    <motion.article 
-      className="group perspective cursor-pointer"
-      initial={{ opacity: 0, y: 50 }}
+    <motion.article
+      className="group relative"
+      ref={cardRef}
+      style={{ rotateX, rotateY }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      initial={{ opacity: 0, y: 48 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.2 }}
-      viewport={{ once: true }}
-      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.7, delay: index * 0.15, ease: [0.23, 1, 0.32, 1] }}
+      viewport={{ once: true, amount: 0.4 }}
     >
-      <div
-        ref={ref}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        onClick={onClick}
-        className="tilt relative h-80 rounded-2xl glass border border-glass overflow-hidden transition-all duration-300 will-change-transform group-hover:shadow-2xl group-hover:shadow-accent-blue/20"
-        role="img"
-        aria-label={`${title} project preview`}
+      <motion.div
+        className="relative h-[22rem] rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm cursor-pointer"
+        whileHover={{ scale: 1.015 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        onClick={onOpen}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0" />
-        <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-accent-blue/20 to-accent-amber/20" />
-        
-        {/* Project Image */}
-        <div className="relative h-full w-full">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover rounded-2xl"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        </div>
-        
-        {/* Overlay Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <motion.div
+        <motion.img
+          src={project.image}
+          alt={project.title}
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+          initial={{ scale: 1.06 }}
+          whileHover={{ scale: 1.12 }}
+          transition={{ duration: 1.4, ease: 'easeOut' }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/40"
+          style={{ opacity: glare }}
+        />
+        <div className="absolute inset-x-0 bottom-0 p-6">
+          <motion.span
+            className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs uppercase tracking-[0.3em] text-white/80"
+            initial={{ y: 16, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 + index * 0.1 }}
+          >
+            {project.tag}
+          </motion.span>
+          <motion.h3
+            className="mt-4 text-2xl font-semibold"
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            className="flex items-center justify-between mb-3"
+            transition={{ delay: 0.18 + index * 0.1 }}
           >
-            <h3 className="text-xl font-bold text-white">{title}</h3>
-            <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-sm font-medium">
-              {tag}
-            </span>
-          </motion.div>
-          
+            {project.title}
+          </motion.h3>
           <motion.p
-            initial={{ y: 20, opacity: 0 }}
+            className="mt-3 text-sm text-white/75"
+            initial={{ y: 24, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 + index * 0.1 }}
-            className="text-white/80 text-sm leading-relaxed mb-4"
+            transition={{ delay: 0.25 + index * 0.1 }}
           >
-            {description}
+            {project.description}
           </motion.p>
-          
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
+            className="mt-6 flex items-center text-xs uppercase tracking-[0.3em] text-white/60"
+            initial={{ y: 26, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 + index * 0.1 }}
-            className="flex items-center gap-2 text-white/70 text-sm"
+            transition={{ delay: 0.32 + index * 0.1 }}
           >
-            <span>Click to view details</span>
+            Open Detail Capsule
             <motion.svg
-              className="w-4 h-4"
+              className="ml-3 h-3 w-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
               animate={{ x: [0, 4, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
+              transition={{ repeat: Infinity, duration: 1.8 }}
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </motion.svg>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
+      <motion.div
+        className="pointer-events-none absolute inset-0 rounded-3xl border border-white/10 opacity-0 group-hover:opacity-100"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 6, repeat: Infinity }}
+      />
     </motion.article>
   )
 }
-

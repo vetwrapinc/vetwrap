@@ -8,7 +8,7 @@ const ImageModal = ({ isOpen, onClose, image, title, description }) => {
     } else {
       document.body.style.overflow = 'unset'
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset'
     }
@@ -25,19 +25,25 @@ const ImageModal = ({ isOpen, onClose, image, title, description }) => {
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
-        <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
-        
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.8, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative max-w-4xl max-h-[90vh] w-full"
-          onClick={(e) => e.stopPropagation()}
+          exit={{ scale: 0.92, opacity: 0 }}
+          transition={{ type: 'spring', damping: 22, stiffness: 240 }}
+          className="relative w-full max-w-4xl"
+          onClick={(event) => event.stopPropagation()}
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+            className="absolute top-3 right-3 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-all duration-300 hover:rotate-90"
+            aria-label="Close detail view"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -45,47 +51,54 @@ const ImageModal = ({ isOpen, onClose, image, title, description }) => {
           </button>
 
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl overflow-hidden shadow-2xl"
+            className="overflow-hidden rounded-3xl bg-white"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.4 }}
           >
             <div className="relative">
-              <img
+              <motion.img
                 src={image}
                 alt={title}
                 className="w-full h-auto max-h-[70vh] object-cover"
+                initial={{ scale: 1.02 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.6 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              />
             </div>
-            
-            <div className="p-6 bg-white">
+
+            <div className="p-6 md:p-8 bg-white">
               <motion.h3
-                initial={{ y: 10, opacity: 0 }}
+                initial={{ y: 12, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl font-bold text-gray-900 mb-2"
+                transition={{ delay: 0.1 }}
+                className="text-3xl font-semibold text-gray-900"
               >
                 {title}
               </motion.h3>
-              
               <motion.p
-                initial={{ y: 10, opacity: 0 }}
+                initial={{ y: 12, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-gray-600 mb-4"
+                transition={{ delay: 0.18 }}
+                className="mt-3 text-gray-600"
               >
                 {description}
               </motion.p>
-              
               <motion.div
-                initial={{ y: 10, opacity: 0 }}
+                initial={{ y: 12, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                transition={{ delay: 0.28 }}
+                className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4"
               >
-                <p className="text-sm text-amber-800 font-medium">
-                  ⚠️ These products are not actual products for companies. This is just an example of what we are capable of.
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Each collage pulls layered renders from our internal archive. Admins can see requests mapped to these references, assign them to specialists, and launch AI generated narrative summaries that support the next client briefing.
                 </p>
               </motion.div>
             </div>

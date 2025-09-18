@@ -27,7 +27,7 @@ export default function WhyUs() {
         </div>
         <div className="mt-10 text-sm text-white/70">
           <p>
-            VetWrap Inc represents discipline, precision, and creativity with impact. We value service before self (10% of profits support veterans overseas), excellence in execution, and adaptability. Clients aren’t just customers—they’re partners on a mission.
+            VetWrap Inc represents discipline, precision, and creativity with impact. We value service before self (10% of profits support veterans overseas), excellence in execution, and adaptability. Clients aren’t just customers-they’re partners on a mission.
           </p>
         </div>
       </div>

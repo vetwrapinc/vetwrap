@@ -1,9 +1,11 @@
-import React from 'react'
+﻿import React from 'react'
+import { useDashboard } from '../context/DashboardContext'
 
 export default function Contact() {
   const [rush, setRush] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
   const [status, setStatus] = React.useState(null)
+  const { registerQuote } = useDashboard()
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY
   const widgetIdRef = React.useRef(null)
 
@@ -13,16 +15,13 @@ export default function Contact() {
     setStatus(null)
     const form = new FormData(e.currentTarget)
 
-    // Honeypot check
     if (form.get('company')) {
       setStatus({ ok: false, msg: 'Spam detected.' })
       setSubmitting(false)
       return
     }
 
-    // placeholder POST to future backend endpoint
     try {
-      // Collect reCAPTCHA token if widget mounted
       if (widgetIdRef.current && window.grecaptcha) {
         const token = window.grecaptcha.getResponse(widgetIdRef.current)
         if (token) form.set('recaptcha', token)
@@ -34,14 +33,34 @@ export default function Contact() {
         body: JSON.stringify(Object.fromEntries(form))
       })
       if (!res.ok) throw new Error('Network error')
+
+      const result = await res.json().catch(() => ({}))
+      const insertedId = (() => {
+        if (result && typeof result === 'object') {
+          if (Array.isArray(result.db) && result.db[0] && result.db[0].id) return result.db[0].id
+          if (result.db && typeof result.db === 'object' && result.db.id) return result.db.id
+          if (result.id) return result.id
+        }
+        return undefined
+      })()
+
+      registerQuote({
+        id: insertedId,
+        name: form.get('name'),
+        email: form.get('email'),
+        projectType: form.get('projectType'),
+        rush: Boolean(form.get('rush')),
+        notes: form.get('notes') || ''
+      })
+
       setStatus({ ok: true, msg: 'Request received. We will respond shortly.' })
       e.currentTarget.reset()
       setRush(false)
     } catch (err) {
       console.error('Failed to submit quote request:', err)
-      setStatus({ 
-        ok: false, 
-        msg: 'Failed to send request. Please try again or contact us directly.' 
+      setStatus({
+        ok: false,
+        msg: 'Failed to send request. Please try again or contact us directly.'
       })
     } finally {
       setSubmitting(false)
@@ -73,12 +92,12 @@ export default function Contact() {
           <div>
             <h2 id="contact-title" className="text-2xl sm:text-3xl font-semibold tracking-tight">Request a Quote</h2>
             <p className="text-white/70 mt-3 text-sm max-w-prose">
-              Styled like a professional quote. This form posts to a backend endpoint you can deploy later. Includes honeypot spam protection and optional reCAPTCHA (env-based).
+              Our intake form routes directly into the operations dashboard so every request gains an AI distilled summary, security check, and ready to assign scope timeline.
             </p>
             <ul className="mt-6 text-sm text-white/80 space-y-2">
-              <li>• Name, Email, Project Type</li>
-              <li>• Optional Rush (+$400, 4–7 days)</li>
-              <li>• Optional Notes</li>
+              <li>- Name, Email, Project Type</li>
+              <li>- Optional Rush (+$400, 4-7 days)</li>
+              <li>- Optional Notes</li>
             </ul>
           </div>
 
@@ -95,7 +114,7 @@ export default function Contact() {
             </div>
             <div className="mt-4">
               <label htmlFor="projectType" className="block text-sm mb-1">Project Type</label>
-              <select id="projectType" name="projectType" required className="w-full bg-white/5 border-white/15 rounded-md focus:ring-accent-blue focus:border-accent-blue">
+              <select id="projectType" name="projectType" required className="w-full dropdown-field border border-white/20 rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-accent-blue focus:border-accent-blue">
                 <option value="Logo">Logo Design</option>
                 <option value="Brand Identity">Brand Identity Kit</option>
                 <option value="Social Pack">Social Media Pack</option>
@@ -104,7 +123,7 @@ export default function Contact() {
             </div>
             <div className="mt-4 flex items-center gap-3">
               <input id="rush" name="rush" type="checkbox" className="rounded border-white/20 text-accent-amber focus:ring-accent-amber" onChange={(e) => setRush(e.target.checked)} />
-              <label htmlFor="rush" className="text-sm">Rush (+$400, 4–7 day turnaround)</label>
+              <label htmlFor="rush" className="text-sm">Rush (+$400, 4-7 day turnaround)</label>
             </div>
             {rush && (
               <div className="mt-2 text-xs text-accent-amber/80">Rush selected. $400 will be added to your quote.</div>
@@ -113,13 +132,11 @@ export default function Contact() {
               <label htmlFor="notes" className="block text-sm mb-1">Notes (optional)</label>
               <textarea id="notes" name="notes" rows={4} className="w-full bg-white/5 border-white/15 rounded-md focus:ring-accent-blue focus:border-accent-blue" placeholder="Goals, references, brand voice..." />
             </div>
-            {/* Honeypot */}
             <div className="hidden" aria-hidden>
               <label htmlFor="company">Company</label>
               <input id="company" name="company" tabIndex={-1} autoComplete="off" />
             </div>
 
-            {/* Placeholder for optional reCAPTCHA site key (inject if VITE_RECAPTCHA_SITE_KEY set) */}
             <div id="recaptcha-container" className="mt-4" />
 
             <div className="mt-6">

@@ -1,35 +1,32 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/api/**/*.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
-    }
-  ],
-  "env": {
-    "PYTHONPATH": "backend"
-  },
-  "functions": {
-    "backend/api/**/*.py": {
-      "maxDuration": 30
-    }
-  }
+    "version":  2,
+    "builds":  [
+                   {
+                       "src":  "package.json",
+                       "use":  "@vercel/static-build",
+                       "config":  {
+                                      "distDir":  "dist"
+                                  }
+                   },
+                   {
+                       "src":  "backend/api/**/*.py",
+                       "use":  "@vercel/python"
+                   }
+               ],
+    "routes":  [
+                   {
+                       "src":  "/api/(.*)",
+                       "dest":  "/backend/api/$1"
+                   },
+                   {
+                       "handle":  "filesystem"
+                   },
+                   {
+                       "src":  "^/(?!api/).*$",
+                       "dest":  "/index.html"
+                   }
+               ],
+    "env":  {
+                "PYTHONPATH":  "backend"
+            }
 }
-

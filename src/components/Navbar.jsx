@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+﻿import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 
@@ -11,82 +11,101 @@ const navItems = [
   { label: 'Contact', href: '#contact' }
 ]
 
+function createScrollAnimator() {
+  const duration = 900
+  return (target) => {
+    if (!target) return
+    const startY = window.scrollY
+    const offset = 80
+    const endY = target.getBoundingClientRect().top + window.scrollY - offset
+    const delta = endY - startY
+    const amplitude = delta * 0.08
+    const startTime = performance.now()
+
+    const animate = (time) => {
+      const progress = Math.min((time - startTime) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const wobble = Math.sin(progress * Math.PI * 1.6) * amplitude * (1 - progress)
+      window.scrollTo({ top: startY + delta * eased + wobble, behavior: 'auto' })
+      if (progress < 1) requestAnimationFrame(animate)
+    }
+
+    requestAnimationFrame(animate)
+  }
+}
+
 export default function Navbar({ onLoginClick }) {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
-  
+  const location = useLocation()
+  const mobileMenuRef = React.useRef(null)
+  const animateScroll = React.useMemo(() => createScrollAnimator(), [])
+
   const userRole = user?.publicMetadata?.role || 'client'
   const showDashboardLink = Boolean(user)
 
+  const handleNavInteraction = (href, closeMenu = false) => (event) => {
+    event.preventDefault()
+    const target = document.querySelector(href)
+    if (target) animateScroll(target)
+    if (closeMenu && mobileMenuRef.current) {
+      mobileMenuRef.current.open = false
+    }
+  }
+
+  const handleMobileLogin = (event) => {
+    if (mobileMenuRef.current) mobileMenuRef.current.open = false
+    onLoginClick(event)
+  }
+
+  const renderNavButton = (item, index) => (
+    <motion.button
+      key={item.label}
+      type="button"
+      onClick={handleNavInteraction(item.href)}
+      className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
+      whileHover={{ y: -3 }}
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.08 }}
+    >
+      {item.label}
+    </motion.button>
+  )
+
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-night/70 border-b border-white/5">
+    <header className="sticky top-0 z-40 backdrop-blur-lg bg-night/70 border-b border-white/5">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" aria-label="Primary">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Link to="/" className="flex items-center gap-3 focusable" aria-label="VetWraps home">
-            <div className="w-8 h-8 relative">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <defs>
-                  <linearGradient id="vetwrapsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#5fb7fa" />
-                    <stop offset="100%" stopColor="#ffb26a" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M20 20 L80 20 L80 40 L60 40 L60 60 L40 60 L40 40 L20 40 Z"
-                  fill="url(#vetwrapsGradient)"
-                  className="opacity-90"
-                />
-                <path
-                  d="M30 30 L70 30 L70 50 L50 50 L50 70 L30 70 Z"
-                  fill="rgba(255,255,255,0.3)"
-                />
-              </svg>
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-accent-blue via-white/35 to-accent-amber border border-white/30 shadow-[0_8px_24px_rgba(20,20,35,0.35)] overflow-hidden">
+              <span className="text-night font-semibold text-lg tracking-[0.18em]">VP</span>
             </div>
-            <span className="text-sm tracking-wider uppercase opacity-90 font-semibold">VetWraps</span>
+            <span className="text-sm tracking-[0.35em] uppercase text-white/90 font-semibold">VetWraps</span>
           </Link>
         </motion.div>
         <div className="hidden md:flex items-center gap-6">
-          {navItems.map((item, index) => (
-            <motion.a
-              key={item.label}
-              href={item.href}
-              className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
-              whileHover={{ y: -2 }}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              {item.label}
-            </motion.a>
-          ))}
+          {navItems.map(renderNavButton)}
           {showDashboardLink ? (
             <>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45 }}>
                 <Link
                   to={`/${userRole}`}
+                  state={{ from: location.pathname + location.hash }}
                   className="text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white focusable transition-colors"
                 >
                   Dashboard
                 </Link>
               </motion.div>
-              {user && (
-                <motion.button
-                  type="button"
-                  onClick={() => signOut()}
-                  className="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white focusable transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Log Out
-                </motion.button>
-              )}
+              <motion.button
+                type="button"
+                onClick={() => signOut()}
+                className="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white focusable transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Log Out
+              </motion.button>
             </>
           ) : isLoaded ? (
             <motion.button
@@ -95,31 +114,29 @@ export default function Navbar({ onLoginClick }) {
               className="text-[11px] tracking-[0.2em] uppercase text-white/70 hover:text-white focusable transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.45 }}
             >
               Log In
             </motion.button>
           ) : null}
-          {!showDashboardLink && !user && !isLoaded && (
-            <span className="text-[11px] tracking-[0.2em] uppercase text-white/60">Loading…</span>
-          )}
-          <motion.a
-            href="#contact"
+          <motion.button
+            type="button"
+            onClick={handleNavInteraction('#contact')}
             className="text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10"
-            whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.2)" }}
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.2)' }}
             whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.55 }}
           >
             Start Project
-          </motion.a>
+          </motion.button>
         </div>
         <div className="md:hidden">
-          <details>
-            <summary 
+          <details ref={mobileMenuRef}>
+            <summary
               className="list-none text-[11px] tracking-[0.2em] uppercase bg-white/10 hover:bg-white/20 px-3 py-2 rounded focusable border border-white/10 cursor-pointer"
               aria-expanded="false"
               aria-controls="mobile-menu"
@@ -128,26 +145,41 @@ export default function Navbar({ onLoginClick }) {
             </summary>
             <motion.div
               id="mobile-menu"
-              className="absolute right-4 mt-2 w-48 glass rounded p-2 border border-glass"
+              className="absolute right-4 mt-2 w-56 glass rounded-xl p-3 border border-glass space-y-1"
               role="menu"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
               {navItems.map((item) => (
-                <a key={item.label} href={item.href} className="block px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded">
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={handleNavInteraction(item.href, true)}
+                  className="block w-full text-left px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
+                >
                   {item.label}
-                </a>
+                </button>
               ))}
               {showDashboardLink ? (
                 <>
-                  <Link to={`/${userRole}`} className="block px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded">
+                  <Link
+                    to={`/${userRole}`}
+                    state={{ from: location.pathname + location.hash }}
+                    className="block px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
+                    onClick={() => {
+                      if (mobileMenuRef.current) mobileMenuRef.current.open = false
+                    }}
+                  >
                     Dashboard
                   </Link>
                   {user && (
                     <button
                       type="button"
-                      onClick={() => signOut()}
+                      onClick={() => {
+                        signOut()
+                        if (mobileMenuRef.current) mobileMenuRef.current.open = false
+                      }}
                       className="w-full text-left px-3 py-2 text-sm text-black/70 hover:bg-white/10 rounded"
                     >
                       Log Out
@@ -157,15 +189,21 @@ export default function Navbar({ onLoginClick }) {
               ) : isLoaded ? (
                 <button
                   type="button"
-                  onClick={onLoginClick}
+                  onClick={handleMobileLogin}
                   className="w-full text-left px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
                 >
                   Log In
                 </button>
               ) : (
-                <span className="block px-3 py-2 text-sm text-black/60">Loading…</span>
+                <span className="block px-3 py-2 text-sm text-black/60">Loading</span>
               )}
-              <a href="#contact" className="block px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded">Start Project</a>
+              <button
+                type="button"
+                onClick={handleNavInteraction('#contact', true)}
+                className="block w-full text-left px-3 py-2 text-sm text-black/85 hover:bg-white/10 rounded"
+              >
+                Start Project
+              </button>
             </motion.div>
           </details>
         </div>
@@ -173,4 +211,3 @@ export default function Navbar({ onLoginClick }) {
     </header>
   )
 }
-

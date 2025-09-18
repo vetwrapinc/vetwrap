@@ -116,7 +116,7 @@ async function sendEmail(payload) {
   const provider = (process.env.EMAIL_PROVIDER || '').toLowerCase()
   const to = process.env.QUOTE_INBOX
   if (!to) return null
-  const subject = `New Quote: ${payload.projectType} — ${payload.name}${payload.rush ? ' (Rush)' : ''}`
+  const subject = `New Quote: ${payload.projectType} - ${payload.name}${payload.rush ? ' (Rush)' : ''}`
   const text = `Name: ${payload.name}\nEmail: ${payload.email}\nProject: ${payload.projectType}\nRush: ${payload.rush ? 'Yes (+$400)' : 'No'}\nNotes: ${payload.notes || '-'}\nIP: ${payload.ip}\nUA: ${payload.userAgent}\nCreated: ${payload.createdAt}`
   if (provider === 'resend') {
     const key = process.env.RESEND_API_KEY

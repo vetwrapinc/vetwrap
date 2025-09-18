@@ -561,7 +561,7 @@ export default function Subscribers() {
     <div className="min-h-screen bg-night text-white">
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
-        <title>Operations Dashboard — VetWraps</title>
+        <title>Operations Dashboard - VetWraps</title>
       </Helmet>
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         {!ready || identityChecking ? (
@@ -694,7 +694,7 @@ export default function Subscribers() {
                   <StatCard
                     label="Avg Hourly Rate"
                     value={employeesStats.avgRateLabel}
-                    description={employeesStats.avgRateLabel === '—' ? 'Add rates to track averages' : 'Based on recorded rates'}
+                    description={employeesStats.avgRateLabel === '-' ? 'Add rates to track averages' : 'Based on recorded rates'}
                   />
                 </div>
 
@@ -917,9 +917,9 @@ export default function Subscribers() {
                               <td className="py-2 pr-4 font-medium">{emp.firstName} {emp.lastName}</td>
                               <td className="py-2 pr-4">{emp.role}</td>
                               <td className="py-2 pr-4 break-all text-white/80">{emp.email}</td>
-                              <td className="py-2 pr-4 text-white/70">{emp.phone || '—'}</td>
-                              <td className="py-2 pr-4 text-white/70">{emp.startDate ? formatDateShort(emp.startDate) : '—'}</td>
-                              <td className="py-2 pr-4 text-white/70">{emp.startDate ? formatTenure(emp.startDate) : '—'}</td>
+                              <td className="py-2 pr-4 text-white/70">{emp.phone || '-'}</td>
+                              <td className="py-2 pr-4 text-white/70">{emp.startDate ? formatDateShort(emp.startDate) : '-'}</td>
+                              <td className="py-2 pr-4 text-white/70">{emp.startDate ? formatTenure(emp.startDate) : '-'}</td>
                               <td className="py-2 pr-4">
                                 <select
                                   value={emp.status}
@@ -934,8 +934,8 @@ export default function Subscribers() {
                                   ))}
                                 </select>
                               </td>
-                              <td className="py-2 pr-4 text-white/70">{emp.hourlyRate != null ? formatCurrency(emp.hourlyRate) : '—'}</td>
-                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{emp.notes || '—'}</td>
+                              <td className="py-2 pr-4 text-white/70">{emp.hourlyRate != null ? formatCurrency(emp.hourlyRate) : '-'}</td>
+                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{emp.notes || '-'}</td>
                               <td className="py-2 pr-4">
                                 <div className="flex flex-wrap gap-2 text-xs">
                                   <button
@@ -1057,12 +1057,12 @@ export default function Subscribers() {
                               <td className="py-2 pr-4 text-white/80 break-all">{q.email}</td>
                               <td className="py-2 pr-4">{q.projectType}</td>
                               <td className="py-2 pr-4">{q.rush ? 'Yes' : 'No'}</td>
-                              <td className="py-2 pr-4 text-white/70">{q.amountRush ? formatCurrency(q.amountRush) : '—'}</td>
-                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{q.notes || '—'}</td>
-                              <td className="py-2 pr-4 text-white/60 text-xs break-all">{q.ip || '—'}</td>
-                              <td className="py-2 pr-4 text-white/60 text-xs break-words max-w-xs" title={q.userAgent}>{q.userAgent || '—'}</td>
+                              <td className="py-2 pr-4 text-white/70">{q.amountRush ? formatCurrency(q.amountRush) : '-'}</td>
+                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{q.notes || '-'}</td>
+                              <td className="py-2 pr-4 text-white/60 text-xs break-all">{q.ip || '-'}</td>
+                              <td className="py-2 pr-4 text-white/60 text-xs break-words max-w-xs" title={q.userAgent}>{q.userAgent || '-'}</td>
                               <td className="py-2 pr-4">{statusBadge(q.status || 'new')}</td>
-                              <td className="py-2 pr-4 text-white/70">{q.assignee || '—'}</td>
+                              <td className="py-2 pr-4 text-white/70">{q.assignee || '-'}</td>
                               <td className="py-2 pr-4">
                                 <RowActions
                                   quote={q}
@@ -1088,7 +1088,7 @@ export default function Subscribers() {
                   <StatCard label="Suspended" value={accessStats.suspended} description="Awaiting re-activation" />
                   <StatCard
                     label="Last Change"
-                    value={accessStats.lastUpdated ? formatDate(accessStats.lastUpdated) : '—'}
+                    value={accessStats.lastUpdated ? formatDate(accessStats.lastUpdated) : '-'}
                     description={accessStats.lastUpdated ? 'Most recent update' : 'No changes recorded'}
                   />
                 </div>
@@ -1283,7 +1283,7 @@ export default function Subscribers() {
                           {filteredAccessGrants.map((grant) => (
                             <tr key={grant.id || grant.email} className="border-t border-white/10">
                               <td className="py-2 pr-4 font-medium break-all">{grant.email}</td>
-                              <td className="py-2 pr-4 text-white/70">{grant.name || '—'}</td>
+                              <td className="py-2 pr-4 text-white/70">{grant.name || '-'}</td>
                               <td className="py-2 pr-4 text-white/70 capitalize">{grant.role}</td>
                               <td className="py-2 pr-4">
                                 <span
@@ -1297,9 +1297,9 @@ export default function Subscribers() {
                                 </span>
                               </td>
                               <td className="py-2 pr-4 text-white/60 text-xs">
-                                {grant.lastSeenAt ? formatDate(grant.lastSeenAt) : '—'}
+                                {grant.lastSeenAt ? formatDate(grant.lastSeenAt) : '-'}
                               </td>
-                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{grant.notes || '—'}</td>
+                              <td className="py-2 pr-4 max-w-xs whitespace-pre-wrap break-words text-white/70">{grant.notes || '-'}</td>
                               <td className="py-2 pr-4">
                                 <div className="flex flex-wrap gap-2 text-xs">
                                   <button
@@ -1452,12 +1452,12 @@ function computeEmployeeStats(items = []) {
   const avgTenureDays = starts.length
     ? starts.reduce((acc, date) => acc + (now - date.getTime()) / dayMs, 0) / starts.length
     : 0
-  const avgTenureLabel = avgTenureDays > 0 ? formatTenureFromDays(avgTenureDays) : '—'
+  const avgTenureLabel = avgTenureDays > 0 ? formatTenureFromDays(avgTenureDays) : '-'
   const rates = items
     .map((emp) => Number(emp.hourlyRate))
     .filter((value) => Number.isFinite(value) && value > 0)
   const avgRate = rates.length ? rates.reduce((acc, value) => acc + value, 0) / rates.length : null
-  const avgRateLabel = avgRate != null ? formatCurrency(avgRate) : '—'
+  const avgRateLabel = avgRate != null ? formatCurrency(avgRate) : '-'
   const newThisQuarter = starts.filter((date) => now - date.getTime() <= 90 * dayMs).length
   return {
     total,
@@ -1513,7 +1513,7 @@ function computeUpcomingAnniversaries(items = []) {
     .map((item) => ({
       id: item.id,
       name: item.name,
-      label: `${formatDateShort(item.date)} — ${item.years} yr${item.years === 1 ? '' : 's'}`
+      label: `${formatDateShort(item.date)} - ${item.years} yr${item.years === 1 ? '' : 's'}`
     }))
 }
 
@@ -1527,7 +1527,7 @@ function computeClientStats(items = []) {
       pending: 0,
       rushCount: 0,
       rushValueLabel: '$0.00',
-      lastSubmissionLabel: '—',
+      lastSubmissionLabel: '-',
       avgAgeLabel: 'Pipeline clear'
     }
   }
@@ -1559,7 +1559,7 @@ function computeClientStats(items = []) {
     }
   })
   const pending = items.length - processed
-  const lastSubmissionLabel = lastSubmission ? formatDate(lastSubmission) : '—'
+  const lastSubmissionLabel = lastSubmission ? formatDate(lastSubmission) : '-'
   const avgAgeLabel = pendingCount > 0 ? `Avg age ${formatHours(pendingAgeHours / pendingCount)}` : 'Pipeline clear'
   return {
     total: items.length,
@@ -1591,7 +1591,7 @@ function nextAnniversary(start, now) {
 
 function formatTenure(startDate) {
   const start = parseISODate(startDate)
-  if (!start) return '—'
+  if (!start) return '-'
   const now = new Date()
   const diffDays = (now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)
   if (diffDays < 1) return 'New'
@@ -1609,7 +1609,7 @@ function formatTenure(startDate) {
 }
 
 function formatTenureFromDays(days) {
-  if (!Number.isFinite(days) || days <= 0) return '—'
+  if (!Number.isFinite(days) || days <= 0) return '-'
   if (days >= 365) {
     const years = days / 365
     return `${years >= 10 ? years.toFixed(0) : years.toFixed(1)} yrs`

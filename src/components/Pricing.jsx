@@ -3,21 +3,21 @@ import React from 'react'
 const tiers = [
   {
     name: 'Basic Kit',
-    price: '$400–$800',
-    features: ['Logo or refresh', 'Basic brand sheet', '1–2 concepts, 1 revision'],
+    price: '$400-$800',
+    features: ['Logo or refresh', 'Basic brand sheet', '1-2 concepts, 1 revision'],
     cta: 'Start Basic'
   },
   {
     name: 'Advanced Identity',
-    price: '$1,200–$1,800',
-    features: ['Logo + system', 'Brand guidelines', 'Social pack, 2–3 concepts'],
+    price: '$1,200-$1,800',
+    features: ['Logo + system', 'Brand guidelines', 'Social pack, 2-3 concepts'],
     cta: 'Start Advanced',
     highlight: true
   },
   {
     name: 'Monthly Retainer',
     price: 'Subscription',
-    subtitle: 'Prices vary — monthly billing',
+    subtitle: 'Prices vary - monthly billing',
     features: [
       'Up to 20 adjustments/month (web/logo/media; conditions apply)',
       'Two advertisements monthly',
@@ -34,7 +34,7 @@ export default function Pricing() {
         <h2 id="pricing-title" className="text-2xl sm:text-3xl font-semibold tracking-tight mb-10">Pricing</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {tiers.map((t) => (
-            <article key={t.name} className={`rounded-2xl glass border border-glass p-6 ${t.highlight ? 'shadow-glow' : ''}`}> 
+            <article key={t.name} className={`rounded-2xl glass border border-glass p-6 ${t.highlight ? 'shadow-glow' : ''}`}>
               <div className="flex items-baseline justify-between">
                 <h3 className="text-xl font-semibold">{t.name}</h3>
                 <span className="text-accent-amber text-sm">{t.price}</span>
@@ -52,9 +52,8 @@ export default function Pricing() {
             </article>
           ))}
         </div>
-        <p className="text-sm text-white/60 mt-6">Rush option: +$400 (4–7 day turnaround).</p>
+        <p className="text-sm text-white/60 mt-6">Rush option: +$400 (4-7 day turnaround).</p>
       </div>
     </section>
   )
 }
-

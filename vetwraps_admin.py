@@ -1,13 +1,13 @@
 """
-VetWraps Admin — Desktop Dashboard (Single File)
+VetWraps Admin - Desktop Dashboard (Single File)
 
 Purpose:
   - Admin GUI to connect to the VetWraps website backend (Netlify Functions)
   - Authenticate via Netlify Identity (email + password)
   - View outgoing orders (quotes) with organized info:
-      • Duration (time since created)
-      • Progress (vs expected turnaround)
-      • Time Left (estimate based on turnaround)
+      * Duration (time since created)
+      * Progress (vs expected turnaround)
+      * Time Left (estimate based on turnaround)
       • Efficiency (simple on-track indicator)
       • Task details (name, email, project type, notes)
 
@@ -330,7 +330,7 @@ class DashboardPage(QtWidgets.QWidget):
 
         # Top bar
         top = QtWidgets.QHBoxLayout()
-        title = QtWidgets.QLabel("VetWraps — Orders Dashboard")
+        title = QtWidgets.QLabel("VetWraps - Orders Dashboard")
         title.setObjectName("Header")
         top.addWidget(title)
         top.addStretch(1)
