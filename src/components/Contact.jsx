@@ -38,8 +38,11 @@ export default function Contact() {
       e.currentTarget.reset()
       setRush(false)
     } catch (err) {
-      // Until backend exists, treat as success for UX demo
-      setStatus({ ok: true, msg: 'Request received (demo). Backend hookup pending.' })
+      console.error('Failed to submit quote request:', err)
+      setStatus({ 
+        ok: false, 
+        msg: 'Failed to send request. Please try again or contact us directly.' 
+      })
     } finally {
       setSubmitting(false)
     }
@@ -54,7 +57,9 @@ export default function Contact() {
         try {
           const id = await mountRecaptcha('recaptcha-container', siteKey, { theme: 'dark' })
           widgetIdRef.current = id
-        } catch {}
+        } catch (err) {
+          console.warn('Failed to load reCAPTCHA:', err)
+        }
       }
     }
     run()

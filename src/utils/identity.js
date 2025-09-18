@@ -89,11 +89,15 @@ export function useIdentity() {
 
   const login = React.useCallback(() => {
     const widget = widgetRef.current
-    if (!widget) return
+    if (!widget) {
+      console.warn('Netlify Identity widget not available')
+      return
+    }
     try {
       widget.open('login')
     } catch (err) {
-      console.error(err)
+      console.error('Failed to open login widget:', err)
+      // Could show user-friendly error message here
     }
   }, [])
 
